@@ -1,0 +1,62 @@
+@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+}
+
+.dark {
+  --background: #0a0a0a;
+  --foreground: #ededed;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    /* Default to dark if system prefers it, but .light class can override back */
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Hyper-Minimalist Inputs & Buttons */
+input, button {
+  border-radius: 0 !important; /* Sharp corners */
+  transition: all 0.2s ease;
+}
+
+input:focus {
+  outline: 2px solid var(--foreground);
+  outline-offset: -2px;
+}
+
+button:active {
+  transform: translateY(1px);
+}
+
+/* Compact Article Styles */
+.article-content p {
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+  line-height: 1.5;
+}
+
+.article-content img {
+  max-width: 100%;
+  height: auto;
+  margin: 2rem 0;
+  display: block;
+  border-radius: 0; /* Sharp images */
+  border: 1px solid var(--foreground); /* High contrast border */
+}
+
+.dark .article-content img {
+  border-color: #333;
+  opacity: 0.8;
+}

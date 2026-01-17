@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lite-Read</title>
+  <style>
+    body {
+      width: 240px;
+      padding: 24px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: #fff;
+      color: #000;
+      margin: 0;
+    }
+    h1 {
+      font-size: 14px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      margin: 0 0 24px 0;
+      border-bottom: 2px solid #000;
+      padding-bottom: 8px;
+    }
+    .toggle-container {
+      margin-bottom: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .toggle-container label {
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    input[type="checkbox"] {
+      accent-color: #000;
+      width: 14px;
+      height: 14px;
+      cursor: pointer;
+    }
+    select {
+      width: 100%;
+      padding: 10px 0;
+      margin-bottom: 24px;
+      border: none;
+      border-bottom: 1px solid #eee;
+      border-radius: 0;
+      font-size: 13px;
+      background: transparent;
+      outline: none;
+      cursor: pointer;
+      font-weight: 500;
+    }
+    select:focus {
+      border-bottom-color: #000;
+    }
+    button {
+      width: 100%;
+      padding: 14px;
+      background-color: #000;
+      color: white;
+      border: none;
+      border-radius: 0;
+      cursor: pointer;
+      font-weight: 900;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      transition: opacity 0.2s;
+    }
+    button:hover {
+      opacity: 0.8;
+    }
+    button:disabled {
+      opacity: 0.3;
+    }
+  </style>
+</head>
+<body>
+  <h1>Cluttarex</h1>
+  <div class="toggle-container">
+    <label>
+      <input type="checkbox" id="server-mode">
+      Server Mode
+    </label>
+    <label>
+      <input type="checkbox" id="dark-mode">
+      Dark Mode
+    </label>
+  </div>
+  <select id="font-select">
+    <option value="serif">Classic (Serif)</option>
+    <option value="sans">Modern (Sans)</option>
+    <option value="slab">Sturdy (Slab)</option>
+    <option value="mono">Code (Mono)</option>
+    <option value="dyslexic">Accessibility (Aa)</option>
+  </select>
+  <button id="clean-btn">Enable Lite Mode</button>
+  <script type="module" src="./index.ts"></script>
+</body>
+</html>
