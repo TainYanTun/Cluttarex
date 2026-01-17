@@ -13,15 +13,42 @@ export default function Home() {
   const [font, setFont] = useState<'sans' | 'serif' | 'mono' | 'slab' | 'dyslexic'>('serif');
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
   const [fontSize, setFontSize] = useState<number>(18);
+  const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
+  const [selectedVoiceName, setSelectedVoiceName] = useState<string>('');
+  const [isSpeaking, setIsPlaying] = useState(false);
+  const [speechRate, setSpeechRate] = useState<number>(0.9);
+  const [speechPitch, setSpeechPitch] = useState<number>(1.0);
 
   // Load settings from localStorage on mount
   useEffect(() => {
     const savedFont = localStorage.getItem('lr-font') as any;
     const savedTheme = localStorage.getItem('lr-theme') as any;
     const savedSize = localStorage.getItem('lr-fontSize');
+    const savedVoice = localStorage.getItem('lr-voice');
+    const savedRate = localStorage.getItem('lr-rate');
+    const savedPitch = localStorage.getItem('lr-pitch');
+    
     if (savedFont) setFont(savedFont);
     if (savedTheme) setTheme(savedTheme);
     if (savedSize) setFontSize(parseInt(savedSize, 10));
+    if (savedVoice) setSelectedVoiceName(savedVoice);
+    if (savedRate) setSpeechRate(parseFloat(savedRate));
+    if (savedPitch) setSpeechPitch(parseFloat(savedPitch));
+
+    // Load voices
+    const loadVoices = () => {
+      const vs = window.speechSynthesis.getVoices();
+      // Prioritize "Natural" or "Google" voices in the list
+      const filtered = vs.filter(v => v.lang.startsWith('en')).sort((a, b) => {
+        const aScore = (a.name.includes('Natural') || a.name.includes('Google')) ? 1 : 0;
+        const bScore = (b.name.includes('Natural') || b.name.includes('Google')) ? 1 : 0;
+        return bScore - aScore;
+      });
+      setVoices(filtered);
+    };
+    
+    loadVoices();
+    window.speechSynthesis.onvoiceschanged = loadVoices;
   }, []);
 
   // Save settings when they change
@@ -29,10 +56,35 @@ export default function Home() {
     localStorage.setItem('lr-font', font);
     localStorage.setItem('lr-theme', theme);
     localStorage.setItem('lr-fontSize', fontSize.toString());
-  }, [font, theme, fontSize]);
+    localStorage.setItem('lr-voice', selectedVoiceName);
+    localStorage.setItem('lr-rate', speechRate.toString());
+    localStorage.setItem('lr-pitch', speechPitch.toString());
+  }, [font, theme, fontSize, selectedVoiceName, speechRate, speechPitch]);
 
   const toggleTheme = () => {
     setTheme(prev => prev === 'light' ? 'dark' : 'light');
+  };
+
+  // Speech Logic
+  const handleListen = () => {
+    if (isSpeaking) {
+      window.speechSynthesis.cancel();
+      setIsPlaying(false);
+      return;
+    }
+
+    if (article) {
+      const utterance = new SpeechSynthesisUtterance(article.textContent);
+      utterance.rate = speechRate;
+      utterance.pitch = speechPitch;
+      utterance.onend = () => setIsPlaying(false);
+      
+      const voice = voices.find(v => v.name === selectedVoiceName) || voices[0];
+      if (voice) utterance.voice = voice;
+      
+      window.speechSynthesis.speak(utterance);
+      setIsPlaying(true);
+    }
   };
 
   const handleRead = async (e: React.FormEvent) => {
@@ -142,6 +194,54 @@ export default function Home() {
 
              {/* Actions */}
              <div className="flex items-center gap-4 text-sm">
+               <div className="flex items-center gap-2">
+                 <button 
+                   onClick={handleListen}
+                   className={`flex items-center gap-2 hover:opacity-50 transition-all font-bold text-xs tracking-widest ${isSpeaking ? 'text-red-500' : ''}`}
+                 >
+                   {isSpeaking ? '■ STOP' : '▶ LISTEN'}
+                 </button>
+                 
+                 {voices.length > 0 && (
+                   <div className="flex items-center gap-2">
+                     <select 
+                       value={selectedVoiceName}
+                       onChange={(e) => setSelectedVoiceName(e.target.value)}
+                       className="bg-transparent border-none text-[10px] uppercase font-bold tracking-tighter opacity-40 hover:opacity-100 outline-none max-w-[80px]"
+                     >
+                       <option value="">Default Voice</option>
+                       {voices.map(v => (
+                         <option key={v.name} value={v.name}>{v.name}</option>
+                       ))}
+                     </select>
+
+                     {/* Fine-tuning controls */}
+                     <div className="flex items-center gap-3 ml-2 opacity-30 hover:opacity-100 transition-opacity">
+                       <div className="flex items-center gap-1">
+                         <span className="text-[8px] font-bold">SPD</span>
+                         <input 
+                           type="range" min="0.5" max="2" step="0.1" 
+                           value={speechRate} 
+                           onChange={(e) => setSpeechRate(parseFloat(e.target.value))}
+                           className="w-12 h-1 accent-current"
+                         />
+                       </div>
+                       <div className="flex items-center gap-1">
+                         <span className="text-[8px] font-bold">PCH</span>
+                         <input 
+                           type="range" min="0.5" max="2" step="0.1" 
+                           value={speechPitch} 
+                           onChange={(e) => setSpeechPitch(parseFloat(e.target.value))}
+                           className="w-12 h-1 accent-current"
+                         />
+                       </div>
+                     </div>
+                   </div>
+                 )}
+               </div>
+
+               <div className="w-px h-4 bg-gray-300 dark:bg-gray-700 mx-1"></div>
+
                <button onClick={() => setFontSize(s => Math.max(14, s - 2))} className="w-6 h-6 hover:opacity-50 font-serif">A-</button>
                <button onClick={() => setFontSize(s => Math.min(32, s + 2))} className="w-6 h-6 hover:opacity-50 font-serif text-lg">A+</button>
                
