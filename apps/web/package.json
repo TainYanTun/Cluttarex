@@ -11,8 +11,10 @@
   "dependencies": {
     "@cluttarex/shared": "workspace:*",
     "cheerio": "^1.1.2",
+    "html2canvas": "^1.4.1",
     "isomorphic-dompurify": "^2.35.0",
     "jsdom": "^27.4.0",
+    "jspdf": "^4.0.0",
     "next": "15.1.4",
     "react": "19.0.0",
     "react-dom": "19.0.0"
@@ -20,6 +22,7 @@
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
     "@types/dompurify": "^3.2.0",
+    "@types/jspdf": "^2.0.0",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",

@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { ArticleData } from '@cluttarex/shared';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 
 interface Tab {
   id: string;
@@ -32,6 +34,7 @@ export default function Home() {
   const [tabs, setTabs] = useState<Tab[]>([{ id: 'init', title: 'New Tab', url: '', article: null, loading: false, error: null, scrollPos: 0 }]);
   const [activeTabId, setActiveTabId] = useState<string>('init');
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const articleRef = useRef<HTMLElement>(null);
 
   // Computed
   const activeTab = tabs.find(t => t.id === activeTabId) || tabs[0];
@@ -216,6 +219,102 @@ export default function Home() {
       
       window.speechSynthesis.speak(utterance);
       setIsPlaying(true);
+    }
+  };
+
+  const handleDownloadPDF = async () => {
+    if (!articleRef.current || !activeTab.article) return;
+
+    const btn = document.getElementById('pdf-btn');
+    if (btn) btn.innerText = '...';
+
+    try {
+      const canvas = await html2canvas(articleRef.current, {
+        scale: 3, // Higher scale for crisp text
+        useCORS: true,
+        logging: false,
+        backgroundColor: '#ffffff', // Always use white for PDF
+        onclone: (clonedDoc) => {
+          const article = clonedDoc.querySelector('article');
+          if (article) {
+            article.style.color = '#000000';
+            article.style.padding = '100px';
+            article.style.maxWidth = '800px';
+
+            // Remove existing HRs from extracted text
+            clonedDoc.querySelectorAll('hr').forEach(hr => hr.remove());
+
+            // Add a Professional Header
+            const header = document.createElement('div');
+            header.innerHTML = `
+              <div style="border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 40px; display: flex; justify-content: space-between; align-items: flex-end;">
+                <span style="font-family: sans-serif; font-weight: 900; text-transform: uppercase; letter-spacing: 2px; font-size: 10px;">Cluttarex Document</span>
+                <span style="font-family: sans-serif; opacity: 0.5; font-size: 8px;">${new Date().toLocaleDateString()}</span>
+              </div>
+            `;
+            article.prepend(header);
+
+            // Ensure last paragraph doesn't touch footer
+            const articleBody = clonedDoc.querySelector('.article-content');
+            if (articleBody) {
+               (articleBody as HTMLElement).style.paddingBottom = '60px';
+               (articleBody as HTMLElement).style.display = 'block';
+            }
+
+            // Add a Source Footer
+            const footer = document.createElement('div');
+            footer.style.clear = 'both';
+            footer.style.display = 'block';
+            footer.innerHTML = `
+              <div style="margin-top: 60px;">
+                <div style="border-top: 4px solid #000; margin-bottom: 4px;"></div>
+                <div style="border-top: 1px solid #000; margin-bottom: 24px;"></div>
+                <p style="font-family: sans-serif; font-size: 8px; font-weight: 900; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 8px;">Source Origin</p>
+                <p style="font-family: mono; font-size: 8px; color: #000; word-break: break-all; opacity: 0.6;">${activeTab.url}</p>
+              </div>
+            `;
+            article.append(footer);
+
+            // Remove images & ads
+            clonedDoc.querySelectorAll('img, button, .ad').forEach(el => el.remove());
+          }
+        }
+      });
+
+      const imgData = canvas.toDataURL('image/jpeg', 0.95);
+      const pdf = new jsPDF({
+        orientation: 'p',
+        unit: 'mm',
+        format: 'a4',
+        compress: true
+      });
+
+      const imgProps = pdf.getImageProperties(imgData);
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+      
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      
+      let heightLeft = pdfHeight;
+      let position = 0;
+
+      // Add First Page
+      pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, pdfHeight);
+      heightLeft -= pageHeight;
+
+      while (heightLeft > 0) {
+        position = heightLeft - pdfHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, pdfHeight);
+        heightLeft -= pageHeight;
+      }
+
+      pdf.save(`${activeTab.title.replace(/\s+/g, '_').toLowerCase()}.pdf`);
+    } catch (err) {
+      console.error('PDF Generation failed:', err);
+      alert('Failed to generate PDF');
+    } finally {
+      if (btn) btn.innerText = 'PDF';
     }
   };
 
@@ -426,6 +525,9 @@ export default function Home() {
                     </div>
                     
                     <div className="flex items-center gap-6">
+                       <button id="pdf-btn" onClick={handleDownloadPDF} className="text-[10px] font-black uppercase tracking-[0.3em] opacity-40 hover:opacity-100 transition-opacity">
+                         PDF
+                       </button>
                        <button onClick={toggleFullscreen} className="text-[10px] font-black uppercase tracking-[0.3em] opacity-40 hover:opacity-100 transition-opacity hidden md:block">
                          {isFullscreen ? 'Exit' : 'Full'}
                        </button>
@@ -531,7 +633,7 @@ export default function Home() {
                     </div>
                   </div>
 
-                  <article className={`${font === 'serif' ? 'font-serif' : font === 'mono' ? 'font-mono' : font === 'slab' ? 'font-slab' : font === 'dyslexic' ? 'font-dyslexic' : 'font-sans'}`}>
+                  <article ref={articleRef} className={`${font === 'serif' ? 'font-serif' : font === 'mono' ? 'font-mono' : font === 'slab' ? 'font-slab' : font === 'dyslexic' ? 'font-dyslexic' : 'font-sans'}`}>
                     <h1 className="text-3xl md:text-5xl font-bold mb-8 md:mb-12 leading-tight tracking-tight break-words">{activeTab.article.title}</h1>
                     
                     {/* Proper Message for Partial Extraction */}
