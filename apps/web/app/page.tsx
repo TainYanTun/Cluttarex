@@ -258,19 +258,35 @@ export default function Home() {
              <button onClick={() => setSidebarOpen(false)} className="md:hidden opacity-40 hover:opacity-100 font-bold text-xs">✕</button>
            </div>
         </div>
-        <div className="flex-1 overflow-y-auto px-8 space-y-6">
-          {tabs.map(tab => (
-            <div key={tab.id} onClick={() => { setActiveTabId(tab.id); if (window.innerWidth < 768) setSidebarOpen(false); }} className={`group flex items-center justify-between text-[10px] font-bold uppercase tracking-widest cursor-pointer transition-all relative ${activeTabId === tab.id ? 'opacity-100 pl-4' : 'opacity-40 hover:opacity-100'}`}>
-              {activeTabId === tab.id && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-3 bg-current" />}
-              <span className="truncate pr-2">{tab.title || 'Untitled'}</span>
-              <button onClick={(e) => closeTab(e, tab.id)} className="opacity-0 group-hover:opacity-100 hover:text-red-500">×</button>
-            </div>
-          ))}
-        </div>
-        <div className="p-8 text-[9px] font-black uppercase tracking-[0.3em] opacity-20 flex justify-between items-end">
-          <span>Cluttarex</span>
-          <button onClick={clearAllTabs} className="hover:text-red-500">Clear</button>
-        </div>
+                <div className="flex-1 overflow-y-auto px-8 space-y-6">
+                  {tabs.map(tab => (
+                    <div key={tab.id} onClick={() => { setActiveTabId(tab.id); if (window.innerWidth < 768) setSidebarOpen(false); }} className={`group flex items-center justify-between text-[10px] font-bold uppercase tracking-widest cursor-pointer transition-all relative ${activeTabId === tab.id ? 'opacity-100 pl-4' : 'opacity-40 hover:opacity-100'}`}>
+                      {activeTabId === tab.id && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-3 bg-current" />}
+                      <span className="truncate pr-2">{tab.title || 'Untitled'}</span>
+                      <button onClick={(e) => closeTab(e, tab.id)} className="opacity-0 group-hover:opacity-100 hover:text-red-500">×</button>
+                    </div>
+                  ))}
+                </div>
+        
+                <div className="px-8 mt-auto pt-8">
+                  <div className="p-4 border border-current/10 bg-current/[0.02] space-y-3">
+                    <p className="text-[9px] font-black uppercase tracking-[0.3em] opacity-30">Power Up</p>
+                    <p className="text-[10px] font-medium opacity-60 leading-relaxed">Clean any site with one click using our browser extension.</p>
+                    <a 
+                      href="https://github.com/TainYanTun/Cluttarex" 
+                      target="_blank" 
+                      rel="noopener noreferrer" 
+                      className="block text-[10px] font-black uppercase tracking-[0.2em] hover:underline"
+                    >
+                      Get Extension &rarr;
+                    </a>
+                  </div>
+                </div>
+        
+                <div className="p-8 text-[9px] font-black uppercase tracking-[0.3em] opacity-20 flex justify-between items-end">
+                  <span>Cluttarex</span>
+                  <button onClick={clearAllTabs} className="hover:text-red-500">Clear</button>
+                </div>
       </aside>
 
       <main className="flex-1 flex flex-col relative min-w-0 transition-all duration-300">
@@ -285,6 +301,16 @@ export default function Home() {
                       <header className="space-y-6 mb-12">
                         <h1 className="text-5xl md:text-8xl font-black tracking-tighter uppercase italic break-words select-none">Cluttarex</h1>
                         <p className="text-lg md:text-2xl opacity-60 font-medium tracking-tight leading-relaxed">The web is noisy. <br/><span className="opacity-50">Make it silent.</span></p>
+                        <div className="pt-4">
+                          <a 
+                            href="https://github.com/TainYanTun/Cluttarex" 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="text-[10px] font-black uppercase tracking-[0.3em] opacity-40 hover:opacity-100 transition-opacity border border-current px-4 py-2 hover:bg-current hover:text-white dark:hover:text-black"
+                          >
+                            Download Extension
+                          </a>
+                        </div>
                       </header>
                       <form onSubmit={handleRead} className="group relative">
                         <input type="url" value={activeTab.url} onChange={(e) => updateActiveTab({ url: e.target.value })} placeholder="Paste URL..." className="w-full bg-transparent border-b-2 border-current/20 py-8 text-lg md:text-2xl font-bold outline-none placeholder:opacity-40 focus:border-current transition-all" required autoFocus />

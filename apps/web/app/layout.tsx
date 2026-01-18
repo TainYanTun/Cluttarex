@@ -20,7 +20,8 @@ export const metadata: Metadata = {
   description: "Transform any web article into a clean, distraction-free reading experience.",
   manifest: "/manifest.json",
   icons: {
-    icon: "/favicon.ico",
+    icon: "/icon.svg",
+    apple: "/icon.png",
   },
 };
 

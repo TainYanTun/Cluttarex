@@ -53,9 +53,22 @@ function replaceContent(data: any, fontType: string = 'sans', theme: string = 'l
   `;
 
   overlay.innerHTML = `
+    <style>
+      #cluttarex-overlay * { 
+        color: ${textColor} !important; 
+        background-color: transparent !important;
+      }
+      #cluttarex-overlay h1 { font-size: 2.5em; margin-bottom: 30px; font-weight: 800; }
+      #cluttarex-overlay .exit-btn {
+        position: fixed; top: 20px; right: 20px; padding: 10px 20px; 
+        background: ${isDark ? '#333' : '#eee'} !important; 
+        color: ${textColor} !important; border: 1px solid ${borderColor}; 
+        cursor: pointer; font-weight: bold; font-family: sans-serif;
+      }
+    </style>
     <div style="all: revert; max-width: 750px; margin: 0 auto; display: block;">
-      <button onclick="document.getElementById('cluttarex-overlay').remove()" style="all: revert; position: fixed; top: 20px; right: 20px; padding: 10px 20px; background: ${isDark ? '#222' : '#eee'}; color: ${textColor}; border: 1px solid ${borderColor}; cursor: pointer; font-weight: bold; font-family: sans-serif;">EXIT</button>
-      <h1 style="all: revert; font-size: 2.5em; margin-bottom: 30px; font-weight: 800; display: block;">${data.title}</h1>
+      <button class="exit-btn" onclick="document.getElementById('cluttarex-overlay').remove()">EXIT</button>
+      <h1 style="all: revert; display: block;">${data.title}</h1>
       <div style="all: revert; font-size: ${fontSize}px; display: block;">${data.content}</div>
       <div style="all: revert; border-top: 1px solid ${borderColor}; margin-top: 50px; padding-top: 20px; opacity: 0.3; font-size: 10px; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; display: block;">
         End of Cluttarex Clean Version

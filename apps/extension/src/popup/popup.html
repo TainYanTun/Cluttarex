@@ -83,12 +83,11 @@
   </style>
 </head>
 <body>
-  <h1>Cluttarex</h1>
+  <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 24px; border-bottom: 2px solid #000; padding-bottom: 8px;">
+    <img src="icon.png" style="width: 24px; height: 24px; object-fit: contain;">
+    <h1 style="margin: 0; border: none; padding: 0;">Cluttarex</h1>
+  </div>
   <div class="toggle-container">
-    <label>
-      <input type="checkbox" id="server-mode">
-      Server Mode
-    </label>
     <label>
       <input type="checkbox" id="dark-mode">
       Dark Mode
@@ -96,7 +95,7 @@
   </div>
   <select id="font-select">
     <option value="serif">Classic (Serif)</option>
-    <option value="sans">Modern (Sans)</option>
+    <option value="sans" selected>Modern (Sans)</option>
     <option value="slab">Sturdy (Slab)</option>
     <option value="mono">Code (Mono)</option>
     <option value="dyslexic">Accessibility (Aa)</option>

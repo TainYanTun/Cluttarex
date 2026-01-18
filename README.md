@@ -1,58 +1,79 @@
-# Cluttarex
+# CLUTTAREX
+### THE WEB IS NOISY. MAKE IT SILENT.
 
-Distraction-free reading for the web.
+**Cluttarex** is a high-performance, minimalist text-reader suite designed to strip the modern web down to its essential core. No ads. No tracking. No noise. Just the text you came for.
 
-## Project Structure
+---
 
-This is a monorepo managed with **Bun workspaces**:
+## THE ECOSYSTEM
 
-- `apps/web`: Next.js 15 application (Web Proxy).
-- `apps/extension`: Chrome Extension (Manifest V3) built with Vite.
-- `packages/shared`: Shared TypeScript types and utilities.
+### 01 / WEB PROXY
+A lightning-fast interface to declutter any URL. Powered by Next.js and optimized for rapid extraction.
+- **URL Extraction:** Instant server-side or client-side fallback cleaning.
+- **PDF Export:** High-fidelity, multi-page document generation.
+- **Fleet Management:** Persistent reading history via local storage.
 
-## Prerequisites
+### 02 / BROWSER EXTENSION
+A standalone Chrome utility to clean pages in-situ without leaving your tab.
+- **Lite Mode:** One-click distraction removal.
+- **Visual Controls:** Real-time font choice, sizing, and theme switching.
+- **Force Injection:** Programmatic script delivery for 100% reliability.
 
-- [Bun](https://bun.sh) (v1.0+)
-- Node.js (v18+)
+---
 
-## Getting Started
+## ARCHITECTURE
 
-1.  **Install dependencies:**
-    ```bash
-    bun install
-    ```
+Managed as a **Bun Monorepo** for unified development and shared integrity.
 
-2.  **Run the Web Application (Development):**
-    ```bash
-    cd apps/web
-    bun dev
-    ```
-    Open [http://localhost:3000](http://localhost:3000) in your browser.
+```text
+/
+├── apps/
+│   ├── web/        # Next.js 15 + Tailwind 4 (Proxy & PDF Engine)
+│   └── extension/  # Manifest V3 + Vite (The Lite-Mode Cleaner)
+└── packages/
+    └── shared/     # Shared TS Interfaces & Core Models
+```
 
-3.  **Build the Chrome Extension:**
-    ```bash
-    cd apps/extension
-    bun run build
-    ```
-    - This will generate a `dist` folder in `apps/extension`.
-    - Open Chrome and go to `chrome://extensions`.
-    - Enable "Developer mode" (top right).
-    - Click "Load unpacked" and select the `apps/extension/dist` folder.
+---
 
-## Features
+## GETTING STARTED
 
-- **Web Proxy**: Paste a URL to get a clean, text-only version of the page.
-- **Chrome Extension**: Click the "Enable Lite Mode" button in the popup to clean the current page instantly.
-- **Shared Logic**: Common interfaces ensure consistency between the web and extension apps.
+### PREREQUISITES
+- **BUN** (v1.0+)
+- **CHROME BROWSER**
 
-## Technologies
+### INSTALLATION
+```bash
+# Clone the repository
+git clone https://github.com/TainYanTun/Cluttarex.git
 
-- **TypeScript**: Strictly typed across the entire monorepo.
-- **Next.js**: Server-side rendering and API routes for the web proxy.
-- **Vite**: Fast bundling for the Chrome extension.
-- **Tailwind CSS**: Utility-first styling for the web app.
-- **Cheerio**: HTML parsing and sanitization.
+# Install dependencies
+bun install
+```
 
-## License
+### DEVELOPMENT
+```bash
+# Launch the Web Dashboard
+bun --filter web dev
 
-MIT
+# Build the Extension
+bun --filter cluttarex-extension build
+```
+
+---
+
+## THE TECH STACK
+
+- **CORE:** TypeScript (Strict Mode)
+- **WEB:** Next.js (Edge Runtime API), Tailwind CSS 4
+- **EXTENSION:** Vite, Chrome Scripting API
+- **PARSING:** Cheerio, DOMParser
+- **EXPORT:** jsPDF, html2canvas
+
+---
+
+## LICENSE
+MIT. Built for the future of focused reading.
+
+---
+**CLUTTAREX / 2026**
