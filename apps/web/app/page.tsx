@@ -477,6 +477,14 @@ export default function Home() {
                       style={{ fontSize: `${fontSize}px` }}
                       dangerouslySetInnerHTML={{ __html: activeTab.article.content }}
                       dir={activeTab.article.dir}
+                      onClick={(e) => {
+                        const target = e.target as HTMLElement;
+                        const link = target.closest('a');
+                        if (link && link.href) {
+                          e.preventDefault();
+                          window.open(link.href, '_blank', 'noopener,noreferrer');
+                        }
+                      }}
                     />
                   </article>
                </div>
