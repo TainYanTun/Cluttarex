@@ -10,13 +10,6 @@
   --foreground: #ffffff;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #000000;
-    --foreground: #ffffff;
-  }
-}
-
 body {
   background: var(--background);
   color: var(--foreground);
@@ -81,23 +74,28 @@ input:focus {
   opacity: 0.8;
 }
 
-/* Typographic & Brutalist Links */
+/* FORCED Brutalist Inverted Links */
 .article-content a {
-  color: var(--foreground);
-  font-weight: 800;
-  text-decoration: underline;
-  text-decoration-thickness: 1px;
-  text-underline-offset: 2px;
-  /* Distinctive "dashed" or "double" look without being thick */
-  border-bottom: 1px solid var(--foreground);
+  display: inline !important;
+  color: #ffffff !important; /* White text */
+  background-color: #000000 !important; /* Black background */
+  font-weight: 900 !important;
+  padding: 1px 4px !important;
+  text-decoration: none !important;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
   transition: all 0.1s ease;
+  cursor: pointer !important;
+}
+
+.dark .article-content a {
+  color: #000000 !important; /* Black text */
+  background-color: #ffffff !important; /* White background */
 }
 
 .article-content a:hover {
-  background-color: var(--foreground);
-  color: var(--background);
-  text-decoration: none;
-  border-bottom-color: transparent;
+  opacity: 0.8 !important;
+  text-decoration: underline !important;
 }
 
 /* Custom Selection */

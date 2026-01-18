@@ -42,6 +42,41 @@ export default function Home() {
   };
 
   // --- Effects ---
+  
+  // Load Persistence
+  useEffect(() => {
+    const savedTabs = localStorage.getItem('cltrx-tabs');
+    const savedActiveId = localStorage.getItem('cltrx-active-id');
+    const savedSidebar = localStorage.getItem('cltrx-sidebar');
+
+    if (savedTabs) {
+      try {
+        const parsed = JSON.parse(savedTabs);
+        if (parsed.length > 0) setTabs(parsed);
+      } catch (e) { console.error('Failed to parse saved tabs'); }
+    }
+    if (savedActiveId) setActiveTabId(savedActiveId);
+    if (savedSidebar !== null) setSidebarOpen(savedSidebar === 'true');
+  }, []);
+
+  // Save Persistence
+  useEffect(() => {
+    // Only save if there's actual data to avoid overwriting with defaults during mount
+    if (tabs.length > 0) {
+      localStorage.setItem('cltrx-tabs', JSON.stringify(tabs.map(t => ({ ...t, loading: false, error: null })))); // Don't save transient states
+    }
+    localStorage.setItem('cltrx-active-id', activeTabId);
+    localStorage.setItem('cltrx-sidebar', sidebarOpen.toString());
+  }, [tabs, activeTabId, sidebarOpen]);
+
+  // Sync Theme with DOM
+  useEffect(() => {
+    if (theme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [theme]);
 
   // Load Settings
   useEffect(() => {
@@ -106,9 +141,9 @@ export default function Home() {
   const closeTab = (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
     if (tabs.length === 1) {
-      // Reset the last tab instead of removing it
-      setTabs([{ id: Date.now().toString(), title: 'New Tab', url: '', article: null, loading: false, error: null, scrollPos: 0 }]);
-      setActiveTabId(prev => tabs[0].id); // Will need to update this logic slightly
+      const newId = Date.now().toString();
+      setTabs([{ id: newId, title: 'New Tab', url: '', article: null, loading: false, error: null, scrollPos: 0 }]);
+      setActiveTabId(newId);
       return;
     }
     
@@ -119,6 +154,32 @@ export default function Home() {
     }
   };
 
+  const clearAllTabs = () => {
+    if (confirm('Clear all tabs?')) {
+      const newId = Date.now().toString();
+      setTabs([{ id: newId, title: 'New Tab', url: '', article: null, loading: false, error: null, scrollPos: 0 }]);
+      setActiveTabId(newId);
+    }
+  };
+
+  // --- Effects ---
+  
+  // Keyboard Shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'b') {
+        e.preventDefault();
+        setSidebarOpen(prev => !prev);
+      }
+      
+      // ESC to close empty tab and return
+      if (e.key === 'Escape' && !activeTab.article && tabs.length > 1) {
+        closeTab(e as any, activeTabId);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
   const handleRead = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!activeTab.url) return;
@@ -238,6 +299,7 @@ export default function Home() {
 
         <div className="p-8 text-[9px] font-black uppercase tracking-[0.3em] opacity-20 flex justify-between items-end">
           <span>Cluttarex<br/>v1.2</span>
+          <button onClick={clearAllTabs} className="hover:opacity-100 transition-opacity hover:text-red-500">Clear</button>
         </div>
       </aside>
 
