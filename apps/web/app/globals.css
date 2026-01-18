@@ -34,7 +34,7 @@ body::before {
   z-index: -1;
 }
 
-/* Hyper-Minimalist Inputs & Buttons */
+/* Hyper-Minimalist Reset */
 input, button {
   border-radius: 0 !important;
   transition: all 0.2s ease;
@@ -44,20 +44,26 @@ input:focus {
   outline: none !important;
 }
 
-/* Hide scrollbar */
-.no-scrollbar::-webkit-scrollbar {
-    display: none;
-}
-.no-scrollbar {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* Article Content - Pure Typography */
+.article-content {
+  line-height: 1.6;
 }
 
-/* Compact Article Styles */
 .article-content p {
-  margin-top: 1rem;
-  margin-bottom: 1rem;
-  line-height: 1.5;
+  margin-top: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+/* AGGRESSIVE BACKGROUND REMOVAL */
+.article-content *, 
+.article-content a, 
+.article-content mark, 
+.article-content span {
+  background-color: transparent !important;
+  background: none !important;
 }
 
 .article-content img {
@@ -65,37 +71,26 @@ input:focus {
   height: auto;
   margin: 2rem 0;
   display: block;
-  border-radius: 0;
   border: 1px solid var(--foreground);
 }
 
-.dark .article-content img {
-  border-color: #333;
-  opacity: 0.8;
-}
-
-/* FORCED Brutalist Inverted Links */
+/* Sharp Link Styling - No Backgrounds */
 .article-content a {
   display: inline !important;
-  color: #ffffff !important; /* White text */
-  background-color: #000000 !important; /* Black background */
-  font-weight: 900 !important;
-  padding: 1px 4px !important;
-  text-decoration: none !important;
-  box-decoration-break: clone;
-  -webkit-box-decoration-break: clone;
-  transition: all 0.1s ease;
-  cursor: pointer !important;
+  color: inherit !important; /* Use text color */
+  font-weight: 800 !important;
+  text-decoration: underline !important;
+  text-decoration-thickness: 2px !important;
+  text-underline-offset: 4px !important;
+  transition: opacity 0.1s ease;
 }
 
-.dark .article-content a {
-  color: #000000 !important; /* Black text */
-  background-color: #ffffff !important; /* White background */
-}
+/* Theme specific color forcing for absolute visibility */
+:root:not(.dark) .article-content a { color: #000000 !important; }
+.dark .article-content a { color: #ffffff !important; }
 
 .article-content a:hover {
-  opacity: 0.8 !important;
-  text-decoration: underline !important;
+  opacity: 0.4 !important;
 }
 
 /* Custom Selection */

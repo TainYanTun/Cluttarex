@@ -534,20 +534,48 @@ export default function Home() {
 
                   <article className={`${font === 'serif' ? 'font-serif' : font === 'mono' ? 'font-mono' : font === 'slab' ? 'font-slab' : font === 'dyslexic' ? 'font-dyslexic' : 'font-sans'}`}>
                     <h1 className="text-3xl md:text-5xl font-bold mb-8 md:mb-12 leading-tight tracking-tight break-words">{activeTab.article.title}</h1>
-                    <div
-                      className={`article-content ${theme === 'dark' ? 'text-gray-300' : 'text-gray-900'}`}
-                      style={{ fontSize: `${fontSize}px` }}
-                      dangerouslySetInnerHTML={{ __html: activeTab.article.content }}
-                      dir={activeTab.article.dir}
-                      onClick={(e) => {
-                        const target = e.target as HTMLElement;
-                        const link = target.closest('a');
-                        if (link && link.href) {
-                          e.preventDefault();
-                          window.open(link.href, '_blank', 'noopener,noreferrer');
-                        }
-                      }}
-                    />
+                    
+                    {/* Proper Message for Partial Extraction */}
+                    {(activeTab.article as any).isPartial ? (
+                      <div className="border-t-4 border-current pt-12 mt-12 space-y-8 animate-in fade-in duration-700">
+                        <div className="text-sm font-black uppercase tracking-[0.4em] opacity-40">System Report: Partial Extraction</div>
+                        <p className="text-lg md:text-xl font-medium leading-relaxed opacity-80">
+                          We found the title, but the main story is hiding. This usually happens when a website is:
+                        </p>
+                        <ul className="space-y-4 text-xs md:text-sm font-bold uppercase tracking-widest opacity-60 list-disc pl-5">
+                          <li>Protected by a paywall or login</li>
+                          <li>Built entirely with JavaScript (SPA)</li>
+                          <li>Using a highly non-standard layout</li>
+                        </ul>
+                        <div className="pt-8">
+                          <a 
+                            href={activeTab.url} 
+                            target="_blank" 
+                            rel="noreferrer"
+                            className={`inline-block px-8 py-4 font-black uppercase tracking-[0.2em] transition-all
+                              ${theme === 'dark' ? 'bg-white text-black hover:bg-gray-200' : 'bg-black text-white hover:bg-gray-800'}
+                            `}
+                          >
+                            Read on source site &rarr;
+                          </a>
+                        </div>
+                      </div>
+                    ) : (
+                      <div
+                        className={`article-content ${theme === 'dark' ? 'text-gray-300' : 'text-gray-900'}`}
+                        style={{ fontSize: `${fontSize}px` }}
+                        dangerouslySetInnerHTML={{ __html: activeTab.article.content }}
+                        dir={activeTab.article.dir}
+                        onClick={(e) => {
+                          const target = e.target as HTMLElement;
+                          const link = target.closest('a');
+                          if (link && link.href) {
+                            e.preventDefault();
+                            window.open(link.href, '_blank', 'noopener,noreferrer');
+                          }
+                        }}
+                      />
+                    )}
                   </article>
                </div>
              )}

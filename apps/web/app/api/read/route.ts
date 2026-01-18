@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import * as cheerio from 'cheerio';
+import DOMPurify from 'isomorphic-dompurify';
 import { ArticleData } from '@lite-read/shared';
 
 export async function OPTIONS() {
@@ -201,14 +202,21 @@ export async function GET(request: NextRequest) {
       }
     });
 
-    const content = contentNode.html() || '';
+    const content = DOMPurify.sanitize(contentNode.html() || '', {
+      ADD_TAGS: ['img', 'blockquote', 'section', 'article'],
+      ADD_ATTR: ['src', 'href', 'dir', 'alt'],
+    });
     const textContent = contentNode.text().trim().replace(/\s+/g, ' ');
 
-    const article: ArticleData = {
+    // If title exists but content is suspiciously short, we'll flag it
+    const isPartial = textContent.length < 100;
+
+    const article: ArticleData & { isPartial?: boolean } = {
       title,
-      content,
+      content: isPartial ? '' : content,
       textContent,
-      dir: $('html').attr('dir') || 'ltr'
+      dir: $('html').attr('dir') || 'ltr',
+      isPartial
     };
 
     const responseObj = NextResponse.json(article);
