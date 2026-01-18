@@ -330,7 +330,7 @@ export default function Home() {
                           <a 
                             href="/cluttarex-extension.zip" 
                             download="cluttarex-extension.zip"
-                            className="w-fit text-[10px] font-black uppercase tracking-[0.3em] opacity-40 hover:opacity-100 transition-opacity border border-current px-4 py-2 hover:bg-current hover:text-white dark:hover:text-black"
+                            className="w-fit text-[10px] font-black uppercase tracking-[0.3em] opacity-40 hover:opacity-100 transition-all border border-current px-4 py-2 hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black hover:border-black dark:hover:border-white"
                           >
                             Download Extension (.zip)
                           </a>
