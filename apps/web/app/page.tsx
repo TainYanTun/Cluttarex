@@ -39,13 +39,10 @@ export default function Home() {
   // Computed
   const activeTab = tabs.find(t => t.id === activeTabId) || tabs[0];
 
-  // Helper to update active tab
   const updateActiveTab = (updates: Partial<Tab>) => {
     setTabs(prev => prev.map(t => t.id === activeTabId ? { ...t, ...updates } : t));
   };
 
-  // --- Effects ---
-  
   // Load persistence
   useEffect(() => {
     const savedTabs = localStorage.getItem('cltrx-tabs');
@@ -71,13 +68,10 @@ export default function Home() {
     if (sidebarOpen !== undefined) localStorage.setItem('cltrx-sidebar', sidebarOpen.toString());
   }, [tabs, activeTabId, sidebarOpen]);
 
-  // Sync Theme with DOM
+  // Sync Theme
   useEffect(() => {
-    if (theme === 'dark') {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
+    if (theme === 'dark') document.documentElement.classList.add('dark');
+    else document.documentElement.classList.remove('dark');
   }, [theme]);
 
   // Load Settings
@@ -116,15 +110,13 @@ export default function Home() {
 
   // Save Settings
   useEffect(() => {
-    localStorage.setItem('lr-font', font);
-    localStorage.setItem('lr-theme', theme);
-    localStorage.setItem('lr-fontSize', fontSize.toString());
-    localStorage.setItem('lr-voice', selectedVoiceName);
-    localStorage.setItem('lr-rate', speechRate.toString());
-    localStorage.setItem('lr-pitch', speechPitch.toString());
+    localStorage.setItem('cltrx-font', font);
+    localStorage.setItem('cltrx-theme', theme);
+    localStorage.setItem('cltrx-fontSize', fontSize.toString());
+    localStorage.setItem('cltrx-voice', selectedVoiceName);
+    localStorage.setItem('cltrx-rate', speechRate.toString());
+    localStorage.setItem('cltrx-pitch', speechPitch.toString());
   }, [font, theme, fontSize, selectedVoiceName, speechRate, speechPitch]);
-
-  // --- Handlers ---
 
   const toggleTheme = () => setTheme(prev => prev === 'light' ? 'dark' : 'light');
   
@@ -137,7 +129,6 @@ export default function Home() {
     const newId = Date.now().toString();
     setTabs(prev => [...prev, { id: newId, title: 'New Tab', url: '', article: null, loading: false, error: null, scrollPos: 0 }]);
     setActiveTabId(newId);
-    // On mobile, maybe close sidebar automatically? Keeping it simple for now.
   };
 
   const closeTab = (e: React.MouseEvent, id: string) => {
@@ -164,24 +155,6 @@ export default function Home() {
     }
   };
 
-  // --- Effects ---
-  
-  // Keyboard Shortcuts
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'b') {
-        e.preventDefault();
-        setSidebarOpen(prev => !prev);
-      }
-      
-      // ESC to close empty tab and return
-      if (e.key === 'Escape' && !activeTab.article && tabs.length > 1) {
-        closeTab(e as any, activeTabId);
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
   const handleRead = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!activeTab.url) return;
@@ -190,37 +163,20 @@ export default function Home() {
 
     try {
       const res = await fetch(`/api/read?url=${encodeURIComponent(activeTab.url)}`);
-      
-      if (!res.ok) {
-        throw new Error(`Server returned ${res.status}`);
-      }
-
+      if (!res.ok) throw new Error(`Server returned ${res.status}`);
       const data = await res.json();
       updateActiveTab({ article: data, title: data.title || 'Untitled', loading: false });
     } catch (err: unknown) {
-      console.warn('Server extraction failed, trying client-side fallback...', err);
-      
+      console.warn('Server failed, fallback to client fetch', err);
       try {
-        // Simple fallback: Fetch the page and try to extract title/content
-        // Note: This might hit CORS issues depending on the site, but it's a good safety net
         const proxyRes = await fetch(activeTab.url);
         const html = await proxyRes.text();
         const doc = new DOMParser().parseFromString(html, 'text/html');
-        
         const title = doc.querySelector('title')?.innerText || 'Untitled';
-        const content = Array.from(doc.querySelectorAll('p'))
-          .map(p => p.innerText)
-          .filter(t => t.length > 50)
-          .join('<p>');
-
-        updateActiveTab({ 
-          article: { title, content, textContent: content, dir: 'ltr' }, 
-          title, 
-          loading: false 
-        });
+        const content = Array.from(doc.querySelectorAll('p')).map(p => p.innerText).filter(t => t.length > 50).join('<p>');
+        updateActiveTab({ article: { title, content, textContent: content, dir: 'ltr' }, title, loading: false });
       } catch (fallbackErr) {
-        const message = err instanceof Error ? err.message : 'Extraction failed';
-        updateActiveTab({ error: `Could not reach Cluttarex server. (Error: ${message})`, loading: false });
+        updateActiveTab({ error: `Failed to extract content.`, loading: false });
       }
     }
   };
@@ -231,16 +187,13 @@ export default function Home() {
       setIsPlaying(false);
       return;
     }
-
     if (activeTab.article) {
       const utterance = new SpeechSynthesisUtterance(activeTab.article.textContent);
       utterance.rate = speechRate;
       utterance.pitch = speechPitch;
       utterance.onend = () => setIsPlaying(false);
-      
       const voice = voices.find(v => v.name === selectedVoiceName) || voices[0];
       if (voice) utterance.voice = voice;
-      
       window.speechSynthesis.speak(utterance);
       setIsPlaying(true);
     }
@@ -248,466 +201,143 @@ export default function Home() {
 
   const handleDownloadPDF = async () => {
     if (!articleRef.current || !activeTab.article) return;
-
     const btn = document.getElementById('pdf-btn');
     if (btn) btn.innerText = '...';
-
     try {
       const canvas = await html2canvas(articleRef.current, {
-        scale: 3, // Higher scale for crisp text
+        scale: 3,
         useCORS: true,
         logging: false,
-        backgroundColor: '#ffffff', // Always use white for PDF
+        backgroundColor: '#ffffff',
         onclone: (clonedDoc) => {
           const article = clonedDoc.querySelector('article');
           if (article) {
             article.style.color = '#000000';
             article.style.padding = '100px';
             article.style.maxWidth = '800px';
-
-            // Remove existing HRs from extracted text
             clonedDoc.querySelectorAll('hr').forEach(hr => hr.remove());
-
-            // Add a Professional Header
             const header = document.createElement('div');
-            header.innerHTML = `
-              <div style="border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 40px; display: flex; justify-content: space-between; align-items: flex-end;">
-                <span style="font-family: sans-serif; font-weight: 900; text-transform: uppercase; letter-spacing: 2px; font-size: 10px;">Cluttarex Document</span>
-                <span style="font-family: sans-serif; opacity: 0.5; font-size: 8px;">${new Date().toLocaleDateString()}</span>
-              </div>
-            `;
+            header.innerHTML = `<div style="border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 40px; display: flex; justify-content: space-between; align-items: flex-end;"><span style="font-family: sans-serif; font-weight: 900; text-transform: uppercase; letter-spacing: 2px; font-size: 10px;">Cluttarex Document</span><span style="font-family: sans-serif; opacity: 0.5; font-size: 8px;">${new Date().toLocaleDateString()}</span></div>`;
             article.prepend(header);
-
-            // Ensure last paragraph doesn't touch footer
             const articleBody = clonedDoc.querySelector('.article-content');
-            if (articleBody) {
-               (articleBody as HTMLElement).style.paddingBottom = '60px';
-               (articleBody as HTMLElement).style.display = 'block';
-            }
-
-            // Add a Source Footer
+            if (articleBody) { (articleBody as HTMLElement).style.paddingBottom = '60px'; (articleBody as HTMLElement).style.display = 'block'; }
             const footer = document.createElement('div');
-            footer.style.clear = 'both';
-            footer.style.display = 'block';
-            footer.innerHTML = `
-              <div style="margin-top: 60px;">
-                <div style="border-top: 4px solid #000; margin-bottom: 4px;"></div>
-                <div style="border-top: 1px solid #000; margin-bottom: 24px;"></div>
-                <p style="font-family: sans-serif; font-size: 8px; font-weight: 900; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 8px;">Source Origin</p>
-                <p style="font-family: mono; font-size: 8px; color: #000; word-break: break-all; opacity: 0.6;">${activeTab.url}</p>
-              </div>
-            `;
+            footer.style.clear = 'both'; footer.style.display = 'block';
+            footer.innerHTML = `<div style="margin-top: 60px;"><div style="border-top: 4px solid #000; margin-bottom: 4px;"></div><div style="border-top: 1px solid #000; margin-bottom: 24px;"></div><p style="font-family: sans-serif; font-size: 8px; font-weight: 900; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 8px;">Source Origin</p><p style="font-family: mono; font-size: 8px; color: #000; word-break: break-all; opacity: 0.6;">${activeTab.url}</p></div>`;
             article.append(footer);
-
-            // Remove images & ads
             clonedDoc.querySelectorAll('img, button, .ad').forEach(el => el.remove());
           }
         }
       });
-
       const imgData = canvas.toDataURL('image/jpeg', 0.95);
-      const pdf = new jsPDF({
-        orientation: 'p',
-        unit: 'mm',
-        format: 'a4',
-        compress: true
-      });
-
+      const pdf = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4', compress: true });
       const imgProps = pdf.getImageProperties(imgData);
       const pdfWidth = pdf.internal.pageSize.getWidth();
       const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
-      
       const pageHeight = pdf.internal.pageSize.getHeight();
-      
       let heightLeft = pdfHeight;
       let position = 0;
-
-      // Add First Page
       pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, pdfHeight);
       heightLeft -= pageHeight;
-
-      while (heightLeft > 0) {
-        position = heightLeft - pdfHeight;
-        pdf.addPage();
-        pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, pdfHeight);
-        heightLeft -= pageHeight;
-      }
-
+      while (heightLeft > 0) { position = heightLeft - pdfHeight; pdf.addPage(); pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, pdfHeight); heightLeft -= pageHeight; }
       pdf.save(`${activeTab.title.replace(/\s+/g, '_').toLowerCase()}.pdf`);
-    } catch (err) {
-      console.error('PDF Generation failed:', err);
-      alert('Failed to generate PDF');
-    } finally {
-      if (btn) btn.innerText = 'PDF';
-    }
+    } catch (err) { alert('Failed to generate PDF'); } finally { if (btn) btn.innerText = 'PDF'; }
   };
 
-  // --- Components ---
-
-  // Show sidebar if sidebar is manually open OR if we are in "article mode" (active tab has content)
-  // But strictly, user asked for "not in home page only in extract page".
-  // So: Default closed on home. Open on Extract.
-  // Actually, let's make it simpler: Sidebar is available but collapsed by default on Home.
-  
   const showSidebar = sidebarOpen && (activeTab.article !== null || tabs.length > 1);
 
   return (
     <div className={`flex h-screen overflow-hidden transition-colors duration-300 ${theme === 'dark' ? 'bg-black text-white' : 'bg-white text-black'}`}>
+      {showSidebar && <div className="fixed inset-0 bg-black/20 dark:bg-black/50 backdrop-blur-sm z-40 md:hidden" onClick={() => setSidebarOpen(false)} />}
       
-      {/* Mobile Backdrop */}
-      {showSidebar && (
-        <div 
-          className="fixed inset-0 bg-black/20 dark:bg-black/50 backdrop-blur-sm z-40 md:hidden animate-in fade-in duration-300"
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
-
-      {/* Sidebar (Arc-style) */}
-      <aside 
-        className={`flex-shrink-0 border-r transition-all duration-300 ease-in-out flex flex-col
-          ${showSidebar ? 'w-64 translate-x-0 opacity-100' : 'w-0 -translate-x-full opacity-0 overflow-hidden'}
-          ${theme === 'dark' ? 'bg-black border-gray-800 text-gray-300' : 'bg-white border-gray-200 text-gray-700'}
-          md:relative fixed top-0 left-0 bottom-0 z-50 h-full shadow-2xl md:shadow-none
-        `}
-      >
+      <aside className={`flex-shrink-0 border-r transition-all duration-300 ease-in-out flex flex-col ${showSidebar ? 'w-64' : 'w-0 overflow-hidden'} ${theme === 'dark' ? 'bg-black border-gray-800 text-gray-300' : 'bg-white border-gray-200 text-gray-700'} md:relative fixed top-0 left-0 bottom-0 z-50 h-full`}>
         <div className="p-8 flex items-center justify-between">
            <span className="font-black uppercase tracking-[0.2em] text-xs opacity-40">Library</span>
            <div className="flex items-center gap-4">
-             <button 
-               onClick={createTab} 
-               className="w-4 h-4 flex items-center justify-center opacity-40 hover:opacity-100 transition-opacity font-bold text-lg leading-none"
-               title="New Tab"
-             >
-               +
-             </button>
-             {/* Mobile Close Button */}
-             <button 
-               onClick={() => setSidebarOpen(false)}
-               className="md:hidden w-4 h-4 flex items-center justify-center opacity-40 hover:opacity-100 transition-opacity font-bold text-xs leading-none"
-             >
-               ✕
-             </button>
+             <button onClick={createTab} className="opacity-40 hover:opacity-100 font-bold">+</button>
+             <button onClick={() => setSidebarOpen(false)} className="md:hidden opacity-40 hover:opacity-100 font-bold text-xs">✕</button>
            </div>
         </div>
-
         <div className="flex-1 overflow-y-auto px-8 space-y-6">
           {tabs.map(tab => (
-            <div 
-              key={tab.id}
-              onClick={() => {
-                setActiveTabId(tab.id);
-                if (window.innerWidth < 768) setSidebarOpen(false);
-              }}
-              className={`group flex items-center justify-between text-[10px] font-bold uppercase tracking-widest cursor-pointer transition-all relative
-                ${activeTabId === tab.id ? 'opacity-100 pl-4' : 'opacity-40 hover:opacity-100'}
-              `}
-            >
-              {/* Active Indicator Line */}
-              {activeTabId === tab.id && (
-                <div className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-3 bg-current" />
-              )}
-              
+            <div key={tab.id} onClick={() => { setActiveTabId(tab.id); if (window.innerWidth < 768) setSidebarOpen(false); }} className={`group flex items-center justify-between text-[10px] font-bold uppercase tracking-widest cursor-pointer transition-all relative ${activeTabId === tab.id ? 'opacity-100 pl-4' : 'opacity-40 hover:opacity-100'}`}>
+              {activeTabId === tab.id && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-3 bg-current" />}
               <span className="truncate pr-2">{tab.title || 'Untitled'}</span>
-              
-              <button 
-                onClick={(e) => closeTab(e, tab.id)}
-                className="opacity-0 group-hover:opacity-100 hover:text-red-500 transition-opacity font-mono"
-              >
-                ×
-              </button>
+              <button onClick={(e) => closeTab(e, tab.id)} className="opacity-0 group-hover:opacity-100 hover:text-red-500">×</button>
             </div>
           ))}
         </div>
-
         <div className="p-8 text-[9px] font-black uppercase tracking-[0.3em] opacity-20 flex justify-between items-end">
-          <span>Cluttarex<br/>v1.2</span>
-          <button onClick={clearAllTabs} className="hover:opacity-100 transition-opacity hover:text-red-500">Clear</button>
+          <span>Cluttarex</span>
+          <button onClick={clearAllTabs} className="hover:text-red-500">Clear</button>
         </div>
       </aside>
 
-      {/* Main Content Area */}
       <main className="flex-1 flex flex-col relative min-w-0 transition-all duration-300">
-        
-        {/* Toggle Sidebar Button (Visible only when article is active) */}
-        {activeTab.article && (
-          <button 
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="absolute top-4 left-4 z-40 p-2 opacity-20 hover:opacity-100 transition-opacity"
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="9" y1="3" x2="9" y2="21"></line></svg>
-          </button>
-        )}
-
-        <div className="flex-1 overflow-y-auto overflow-x-hidden relative scroll-smooth no-scrollbar flex flex-col">
-          
-          <div className={`max-w-3xl mx-auto px-4 sm:px-6 transition-all duration-500 flex-1 flex flex-col ${!activeTab.article ? '' : 'py-8 md:py-12'}`}>
+        {activeTab.article && <button onClick={() => setSidebarOpen(!sidebarOpen)} className="absolute top-4 left-4 z-40 p-2 opacity-20 hover:opacity-100 transition-opacity"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="9" y1="3" x2="9" y2="21"></line></svg></button>}
+        <div className="flex-1 overflow-y-auto scroll-smooth flex flex-col">
+          <div className={`max-w-3xl mx-auto px-4 sm:px-6 flex-1 flex flex-col w-full ${activeTab.article ? 'py-12' : ''}`}>
              
-             {/* --- Content: Landing State (Empty Tab) --- */}
-             {!activeTab.article && (
-               <div className="animate-in fade-in zoom-in-95 duration-500 flex-1 flex flex-col justify-center items-center w-full min-h-[60vh]">
-                  
-                  {/* Show Hero Branding ONLY if it's the very first initial tab */}
+             {!activeTab.article ? (
+               <div className="flex-1 flex flex-col justify-center items-center w-full min-h-[60vh]">
                   {tabs.length === 1 ? (
-                    <div className="w-full py-12">
-                      <header className="space-y-6 relative mb-12 animate-in slide-in-from-left-4 duration-700">
-                        <div className="absolute -left-12 top-0 h-full w-1 bg-current opacity-10 hidden md:block" />
-                        <h1 className="text-5xl md:text-8xl font-black tracking-tighter uppercase italic break-words hover:line-through decoration-4 decoration-current cursor-default transition-all select-none">
-                          Cluttarex
-                        </h1>
-                        <p className="text-lg md:text-2xl opacity-60 font-medium tracking-tight max-w-lg leading-relaxed">
-                          The web is noisy. <br/>
-                          <span className="opacity-50">Make it silent.</span>
-                        </p>
+                    <div className="w-full">
+                      <header className="space-y-6 mb-12">
+                        <h1 className="text-5xl md:text-8xl font-black tracking-tighter uppercase italic break-words select-none">Cluttarex</h1>
+                        <p className="text-lg md:text-2xl opacity-60 font-medium tracking-tight leading-relaxed">The web is noisy. <br/><span className="opacity-50">Make it silent.</span></p>
                       </header>
-
-                      <div className="space-y-8">
-                        <form onSubmit={handleRead} className="group relative">
-                          <div className="relative overflow-hidden">
-                            <input
-                              type="url"
-                              value={activeTab.url}
-                              onChange={(e) => updateActiveTab({ url: e.target.value })}
-                              placeholder="Paste URL..."
-                              className="w-full bg-transparent border-b-2 border-current/20 py-6 md:py-8 pr-32 text-lg md:text-2xl font-bold outline-none placeholder:opacity-40 focus:border-current focus:placeholder:opacity-20 transition-all duration-300"
-                              required
-                              autoFocus
-                            />
-                            <div className="absolute bottom-0 left-0 w-full h-0.5 bg-current transform -translate-x-full group-focus-within:translate-x-0 transition-transform duration-500 ease-out" />
-                          </div>
-                          <button
-                            type="submit"
-                            disabled={activeTab.loading}
-                            className="absolute right-0 bottom-6 md:bottom-8 text-xs font-black tracking-[0.2em] uppercase px-4 py-2 transition-all disabled:opacity-20 hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black"
-                          >
-                            {activeTab.loading ? '...' : 'Extract'}
-                          </button>
-                        </form>
-
-                        <div className="flex flex-wrap gap-x-6 gap-y-2 text-[10px] uppercase tracking-widest font-bold opacity-40">
-                          <span>Try:</span>
-                          {[
-                            'https://paulgraham.com/hword.html',
-                            'https://waitbutwhy.com/2015/01/artificial-intelligence-revolution-1.html'
-                          ].map((link, i) => (
-                            <button 
-                              key={i}
-                              onClick={() => { updateActiveTab({ url: link }); }}
-                              className="hover:opacity-100 hover:underline decoration-1 underline-offset-4 transition-all"
-                            >
-                              Ex {i + 1}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
+                      <form onSubmit={handleRead} className="group relative">
+                        <input type="url" value={activeTab.url} onChange={(e) => updateActiveTab({ url: e.target.value })} placeholder="Paste URL..." className="w-full bg-transparent border-b-2 border-current/20 py-8 text-lg md:text-2xl font-bold outline-none placeholder:opacity-40 focus:border-current transition-all" required autoFocus />
+                        <button type="submit" disabled={activeTab.loading} className="absolute right-0 bottom-8 text-xs font-black tracking-[0.2em] uppercase px-4 py-2 hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black transition-all">{activeTab.loading ? '...' : 'Extract'}</button>
+                      </form>
                     </div>
                   ) : (
-                  <div className="w-full max-w-xl px-8">
-                    <form onSubmit={handleRead} className="group relative">
-                      <div className="relative overflow-hidden">
-                        <input
-                          type="url"
-                          value={activeTab.url}
-                          onChange={(e) => updateActiveTab({ url: e.target.value })}
-                          placeholder="Search or paste URL..."
-                          className="w-full bg-transparent border-b-2 border-current/20 py-6 text-xl md:text-3xl font-black text-center outline-none placeholder:opacity-40 focus:border-current focus:placeholder:opacity-10 transition-all duration-500 italic tracking-tighter"
-                          required
-                          autoFocus
-                        />
-                        <div className="absolute bottom-0 left-0 w-full h-1 bg-current transform -translate-x-full group-focus-within:translate-x-0 transition-transform duration-700 ease-out" />
-                      </div>
-                      
-                      <div className="mt-12 text-center space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-1000 delay-300">
-                        <div className="text-[10px] font-black uppercase tracking-[0.6em] opacity-40">
-                          {activeTab.loading ? 'Decluttering...' : 'Press Enter to Extract'}
-                        </div>
-                      </div>
-                    </form>
-                  </div>
-                  )}
-                  
-                  {activeTab.error && (
-                    <div className="text-xs md:text-sm font-bold uppercase tracking-widest text-red-500 animate-pulse break-words border-l-2 border-red-500 pl-4 mt-12 max-w-2xl w-full">
-                      Error: {activeTab.error}
+                    <div className="w-full max-w-xl px-8">
+                      <form onSubmit={handleRead}>
+                        <input type="url" value={activeTab.url} onChange={(e) => updateActiveTab({ url: e.target.value })} placeholder="Paste URL..." className="w-full bg-transparent border-b-2 border-current/20 py-6 text-xl md:text-3xl font-black text-center outline-none italic tracking-tighter" required autoFocus />
+                        <div className="mt-12 text-center text-[10px] font-black uppercase tracking-[0.6em] opacity-40">{activeTab.loading ? 'Decluttering...' : 'Press Enter to Extract'}</div>
+                      </form>
                     </div>
                   )}
+                  {activeTab.error && <div className="text-xs font-bold uppercase tracking-widest text-red-500 mt-12 border-l-2 border-red-500 pl-4">{activeTab.error}</div>}
                </div>
-             )}
-
-             {/* --- Content: Article State --- */}
-             {activeTab.article && (
+             ) : (
                <div className="space-y-8 md:space-y-12 animate-in slide-in-from-bottom-4 duration-500">
-                  {/* Article Header Controls */}
                   <div className="flex justify-between items-center pl-10 md:pl-0">
-                    <div className="flex items-center gap-4">
-                      {/* Back / New Tab Shortcut */}
-                      <button 
-                        onClick={() => { createTab(); }} 
-                        className="text-[10px] font-black uppercase tracking-[0.3em] opacity-40 hover:opacity-100 transition-opacity"
-                      >
-                        + New
-                      </button>
-                    </div>
-                    
+                    <button onClick={createTab} className="text-[10px] font-black uppercase tracking-[0.3em] opacity-40 hover:opacity-100">+ New</button>
                     <div className="flex items-center gap-6">
-                       <button id="pdf-btn" onClick={handleDownloadPDF} className="text-[10px] font-black uppercase tracking-[0.3em] opacity-40 hover:opacity-100 transition-opacity">
-                         PDF
-                       </button>
-                       <button onClick={toggleFullscreen} className="text-[10px] font-black uppercase tracking-[0.3em] opacity-40 hover:opacity-100 transition-opacity hidden md:block">
-                         {isFullscreen ? 'Exit' : 'Full'}
-                       </button>
-                       <button onClick={toggleTheme} className="text-[10px] font-black uppercase tracking-[0.3em] opacity-40 hover:opacity-100 transition-opacity">
-                         {theme === 'light' ? 'Dark' : 'Light'}
-                       </button>
+                       <button id="pdf-btn" onClick={handleDownloadPDF} className="text-[10px] font-black uppercase tracking-[0.3em] opacity-40 hover:opacity-100">PDF</button>
+                       <button onClick={toggleFullscreen} className="text-[10px] font-black uppercase tracking-[0.3em] opacity-40 hover:opacity-100 hidden md:block">{isFullscreen ? 'Exit' : 'Full'}</button>
+                       <button onClick={toggleTheme} className="text-[10px] font-black uppercase tracking-[0.3em] opacity-40 hover:opacity-100">{theme === 'light' ? 'Dark' : 'Light'}</button>
                     </div>
                   </div>
 
-                  {/* Toolbar */}
-                  <div className="sticky top-0 z-10 bg-inherit border-b border-current/10 font-sans backdrop-blur-sm bg-opacity-95 transition-all">
-                    <div className="flex flex-col">
-                      <div className="flex items-center justify-between py-4 overflow-x-auto no-scrollbar gap-4">
-                        <div className="flex gap-4 text-[10px] font-black uppercase tracking-[0.2em] flex-shrink-0">
-                          {(['serif', 'sans', 'slab', 'mono'] as const).map((f) => (
-                            <button 
-                              key={f}
-                              onClick={() => setFont(f)} 
-                              className={`hover:opacity-100 transition-opacity ${font === f ? 'opacity-100 underline decoration-2 underline-offset-4' : 'opacity-30'}`}
-                            >
-                              {f}
-                            </button>
-                          ))}
-                        </div>
-
-                        <div className="flex items-center gap-6 text-xs font-black flex-shrink-0 pl-4">
-                            <div className="flex gap-2 opacity-40 border-r border-current/20 pr-6">
-                              <button onClick={() => setFontSize(s => Math.max(14, s - 2))} className="hover:opacity-100 w-6 text-center">A-</button>
-                              <button onClick={() => setFontSize(s => Math.min(32, s + 2))} className="hover:opacity-100 w-6 text-center text-sm">A+</button>
-                            </div>
-                            <div className="flex items-center gap-3">
-                              <button onClick={handleListen} className={`tracking-[0.2em] uppercase transition-colors ${isSpeaking ? 'text-red-500 animate-pulse' : 'opacity-40 hover:opacity-100'}`}>
-                                {isSpeaking ? 'Stop' : 'Listen'}
-                              </button>
-                              <button 
-                                onClick={() => setShowAudioSettings(!showAudioSettings)} 
-                                className={`w-8 h-8 flex items-center justify-center transition-all ${showAudioSettings ? 'bg-black text-white dark:bg-white dark:text-black opacity-100' : 'opacity-40 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/10'}`}
-                                title="Audio Settings"
-                              >
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                                  <line x1="4" y1="21" x2="4" y2="14" />
-                                  <line x1="4" y1="10" x2="4" y2="3" />
-                                  <line x1="12" y1="21" x2="12" y2="12" />
-                                  <line x1="12" y1="8" x2="12" y2="3" />
-                                  <line x1="20" y1="21" x2="20" y2="16" />
-                                  <line x1="20" y1="12" x2="20" y2="3" />
-                                  <line x1="1" y1="14" x2="7" y2="14" />
-                                  <line x1="9" y1="8" x2="15" y2="8" />
-                                  <line x1="17" y1="16" x2="23" y2="16" />
-                                </svg>
-                              </button>
-                            </div>
-                        </div>
+                  <div className="sticky top-0 z-10 bg-inherit border-b border-current/10 backdrop-blur-sm bg-opacity-95 transition-all">
+                    <div className="flex items-center justify-between py-4 gap-4 overflow-x-auto no-scrollbar">
+                      <div className="flex gap-4 text-[10px] font-black uppercase tracking-[0.2em]">
+                        {(['serif', 'sans', 'slab', 'mono'] as const).map((f) => (
+                          <button key={f} onClick={() => setFont(f)} className={`hover:opacity-100 ${font === f ? 'underline decoration-2 underline-offset-4' : 'opacity-30'}`}>{f}</button>
+                        ))}
                       </div>
-
-                      {showAudioSettings && (
-                        <div className="border-t border-current/10 py-6 px-1 animate-in slide-in-from-top-2 duration-200">
-                          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-[10px] font-black uppercase tracking-[0.2em]">
-                            <div className="flex flex-col gap-3">
-                              <div className="flex justify-between opacity-40"><span>Voice Selection</span></div>
-                              <select 
-                                value={selectedVoiceName}
-                                onChange={(e) => setSelectedVoiceName(e.target.value)}
-                                className="bg-transparent border-b border-current/20 py-2 outline-none font-black uppercase tracking-tighter cursor-pointer hover:border-current transition-colors h-8"
-                              >
-                                <option value="">System Default</option>
-                                {voices.map(v => (
-                                  <option key={v.name} value={v.name}>{v.name.replace(/Google |Microsoft |Apple /g, '')}</option>
-                                ))}
-                              </select>
-                            </div>
-                            <div className="flex flex-col gap-3">
-                              <div className="flex justify-between opacity-40">
-                                <span>Playback Speed</span>
-                                <span className="font-mono">{speechRate.toFixed(1)}x</span>
-                              </div>
-                              <div className="h-8 flex items-center">
-                                  <input 
-                                    type="range" min="0.5" max="2" step="0.1" 
-                                    value={speechRate} 
-                                    onChange={(e) => setSpeechRate(parseFloat(e.target.value))}
-                                    className="w-full h-1 accent-current cursor-pointer opacity-50 hover:opacity-100 transition-opacity"
-                                  />
-                              </div>
-                            </div>
-                            <div className="flex flex-col gap-3">
-                              <div className="flex justify-between opacity-40">
-                                <span>Voice Pitch</span>
-                                <span className="font-mono">{speechPitch.toFixed(1)}x</span>
-                              </div>
-                              <div className="h-8 flex items-center">
-                                  <input 
-                                    type="range" min="0.5" max="2" step="0.1" 
-                                    value={speechPitch} 
-                                    onChange={(e) => setSpeechPitch(parseFloat(e.target.value))}
-                                    className="w-full h-1 accent-current cursor-pointer opacity-50 hover:opacity-100 transition-opacity"
-                                  />
-                              </div>
-                            </div>
+                      <div className="flex items-center gap-6 text-xs font-black">
+                          <div className="flex gap-2 opacity-40 border-r border-current/20 pr-6">
+                            <button onClick={() => setFontSize(s => Math.max(14, s - 2))} className="hover:opacity-100 w-6 text-center">A-</button>
+                            <button onClick={() => setFontSize(s => Math.min(32, s + 2))} className="hover:opacity-100 w-6 text-center text-sm">A+</button>
                           </div>
-                        </div>
-                      )}
+                          <button onClick={handleListen} className={`tracking-[0.2em] uppercase transition-colors ${isSpeaking ? 'text-red-500 animate-pulse' : 'opacity-40 hover:opacity-100'}`}>{isSpeaking ? 'Stop' : 'Listen'}</button>
+                      </div>
                     </div>
                   </div>
 
                   <article ref={articleRef} className={`${font === 'serif' ? 'font-serif' : font === 'mono' ? 'font-mono' : font === 'slab' ? 'font-slab' : font === 'dyslexic' ? 'font-dyslexic' : 'font-sans'}`}>
-                    <h1 className="text-3xl md:text-5xl font-bold mb-8 md:mb-12 leading-tight tracking-tight break-words">{activeTab.article.title}</h1>
-                    
-                    {/* Proper Message for Partial Extraction */}
-                    {(activeTab.article as any).isPartial ? (
-                      <div className="border-t-4 border-current pt-12 mt-12 space-y-8 animate-in fade-in duration-700">
-                        <div className="text-sm font-black uppercase tracking-[0.4em] opacity-40">System Report: Partial Extraction</div>
-                        <p className="text-lg md:text-xl font-medium leading-relaxed opacity-80">
-                          We found the title, but the main story is hiding. This usually happens when a website is:
-                        </p>
-                        <ul className="space-y-4 text-xs md:text-sm font-bold uppercase tracking-widest opacity-60 list-disc pl-5">
-                          <li>Protected by a paywall or login</li>
-                          <li>Built entirely with JavaScript (SPA)</li>
-                          <li>Using a highly non-standard layout</li>
-                        </ul>
-                        <div className="pt-8">
-                          <a 
-                            href={activeTab.url} 
-                            target="_blank" 
-                            rel="noreferrer"
-                            className={`inline-block px-8 py-4 font-black uppercase tracking-[0.2em] transition-all
-                              ${theme === 'dark' ? 'bg-white text-black hover:bg-gray-200' : 'bg-black text-white hover:bg-gray-800'}
-                            `}
-                          >
-                            Read on source site &rarr;
-                          </a>
-                        </div>
-                      </div>
-                    ) : (
-                      <div
-                        className={`article-content ${theme === 'dark' ? 'text-gray-300' : 'text-gray-900'}`}
-                        style={{ fontSize: `${fontSize}px` }}
-                        dangerouslySetInnerHTML={{ __html: activeTab.article.content }}
-                        dir={activeTab.article.dir}
-                        onClick={(e) => {
-                          const target = e.target as HTMLElement;
-                          const link = target.closest('a');
-                          if (link && link.href) {
-                            e.preventDefault();
-                            window.open(link.href, '_blank', 'noopener,noreferrer');
-                          }
-                        }}
-                      />
-                    )}
+                    <h1 className="text-3xl md:text-5xl font-bold mb-12 leading-tight tracking-tight">{activeTab.article.title}</h1>
+                    <div className={`article-content ${theme === 'dark' ? 'text-gray-300' : 'text-gray-900'}`} style={{ fontSize: `${fontSize}px` }} dangerouslySetInnerHTML={{ __html: activeTab.article.content }} dir={activeTab.article.dir} />
                   </article>
                </div>
              )}
 
-             {/* Footer (Always Visible at bottom of scroll, simpler version) */}
              {!activeTab.article && (
-                <footer className="pt-24 flex flex-col md:flex-row justify-between items-start md:items-center gap-12 text-[10px] font-black uppercase tracking-[0.3em] opacity-30 pl-8 md:pl-0 pb-12">
+                <footer className="pt-24 flex flex-col md:flex-row justify-between items-start md:items-center gap-12 text-[10px] font-black uppercase tracking-[0.3em] opacity-30 pb-12">
                   <div className="flex flex-col gap-3">
                     <div className="flex items-center gap-3">
                       <div className="w-2 h-2 bg-current animate-pulse" />
@@ -716,17 +346,12 @@ export default function Home() {
                     <div className="w-12 h-px bg-current/20" />
                     <div>Status: Online / {theme}</div>
                   </div>
-                  
-                  <button 
-                    onClick={toggleTheme} 
-                    className="hover:opacity-100 transition-all flex items-center gap-4 border border-current/20 px-4 py-2 hover:border-black hover:bg-black hover:text-white dark:hover:border-white dark:hover:bg-white dark:hover:text-black"
-                  >
+                  <button onClick={toggleTheme} className="hover:opacity-100 transition-all flex items-center gap-4 border border-current/20 px-4 py-2">
                     <span>Toggle Environment</span>
                     <span className="text-lg leading-none translate-y-[-1px]">{theme === 'light' ? '☾' : '☼'}</span>
                   </button>
                 </footer>
              )}
-
           </div>
         </div>
       </main>

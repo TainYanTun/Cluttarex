@@ -38,7 +38,35 @@ export async function GET(request: NextRequest) {
     const $ = cheerio.load(html);
 
     // Remove basic clutter
-    $('script, style, iframe, nav, footer, header, aside, noscript, svg, form, .ad').remove();
+    $('script, style, iframe, nav, footer, header, aside, noscript, svg, form, .ad, button').remove();
+
+    // Image Deduplication Logic
+    const seenImages = new Set<string>();
+    $('img').each((_, el) => {
+      const $img = $(el);
+      const src = $img.attr('src');
+      
+      // 1. Remove if no src or already seen
+      if (!src || seenImages.has(src)) {
+        $img.remove();
+        return;
+      }
+
+      // 2. Remove small icons/pixels
+      const width = parseInt($img.attr('width') || '100', 10);
+      if (width < 50) {
+        $img.remove();
+        return;
+      }
+
+      // 3. Remove placeholders
+      if (src.includes('placeholder') || src.includes('pixel') || $img.attr('aria-label') === 'image unavailable') {
+        $img.remove();
+        return;
+      }
+
+      seenImages.add(src);
+    });
 
     // Extract title
     const title = $('title').text().trim() || $('h1').first().text().trim() || 'No Title';
