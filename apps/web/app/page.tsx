@@ -190,14 +190,38 @@ export default function Home() {
 
     try {
       const res = await fetch(`/api/read?url=${encodeURIComponent(activeTab.url)}`);
+      
+      if (!res.ok) {
+        throw new Error(`Server returned ${res.status}`);
+      }
+
       const data = await res.json();
-
-      if (!res.ok) throw new Error(data.error || 'Failed to fetch article');
-
       updateActiveTab({ article: data, title: data.title || 'Untitled', loading: false });
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'An unknown error occurred';
-      updateActiveTab({ error: message, loading: false });
+      console.warn('Server extraction failed, trying client-side fallback...', err);
+      
+      try {
+        // Simple fallback: Fetch the page and try to extract title/content
+        // Note: This might hit CORS issues depending on the site, but it's a good safety net
+        const proxyRes = await fetch(activeTab.url);
+        const html = await proxyRes.text();
+        const doc = new DOMParser().parseFromString(html, 'text/html');
+        
+        const title = doc.querySelector('title')?.innerText || 'Untitled';
+        const content = Array.from(doc.querySelectorAll('p'))
+          .map(p => p.innerText)
+          .filter(t => t.length > 50)
+          .join('<p>');
+
+        updateActiveTab({ 
+          article: { title, content, textContent: content, dir: 'ltr' }, 
+          title, 
+          loading: false 
+        });
+      } catch (fallbackErr) {
+        const message = err instanceof Error ? err.message : 'Extraction failed';
+        updateActiveTab({ error: `Could not reach Cluttarex server. (Error: ${message})`, loading: false });
+      }
     }
   };
 

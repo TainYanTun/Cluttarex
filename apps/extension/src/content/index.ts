@@ -4,10 +4,10 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   console.log('Cluttarex: Message received', message);
   
   if (message.action === 'clean_page') {
-    cleanPage(message.font, message.theme);
+    cleanPage(message.font, message.theme, message.fontSize);
     sendResponse({ success: true });
   } else if (message.action === 'replace_content') {
-    replaceContent(message.data, message.font, message.theme);
+    replaceContent(message.data, message.font, message.theme, message.fontSize);
     sendResponse({ success: true });
   }
   
@@ -24,7 +24,7 @@ function getFontFamily(fontType: string) {
   }
 }
 
-function replaceContent(data: any, fontType: string = 'sans', theme: string = 'light') {
+function replaceContent(data: any, fontType: string = 'sans', theme: string = 'light', fontSize: string = '20') {
   const fontFamily = getFontFamily(fontType);
   const isDark = theme === 'dark';
   const bgColor = isDark ? '#000' : '#fff';
@@ -32,90 +32,47 @@ function replaceContent(data: any, fontType: string = 'sans', theme: string = 'l
   const linkColor = isDark ? '#68b5e9' : '#0066cc';
   const borderColor = isDark ? '#333' : '#eee';
 
-  // Completely replace the page content
-  document.documentElement.innerHTML = `
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-      <meta charset="UTF-8">
-      <title>${data.title}</title>
-      <style>
-        body {
-          font-family: ${fontFamily};
-          line-height: 1.6;
-          font-size: 19px;
-          max-width: 750px;
-          margin: 0 auto;
-          padding: 60px 24px;
-          background-color: ${bgColor};
-          color: ${textColor};
-          all: initial;
-        }
-        body * { all: revert; }
-        .cltrx-container { max-width: 750px; margin: 0 auto; display: block; }
-        h1 { font-size: 2.5em; margin-bottom: 0.8em; line-height: 1.1; font-weight: 800; letter-spacing: -0.02em; }
-        p { margin: 1.4em 0; }
-        a { color: ${linkColor}; text-decoration: underline; text-underline-offset: 4px; }
-        img { max-width: 100%; height: auto; margin: 2.5em 0; border: 1px solid ${borderColor}; display: block; }
-        hr { border: none; border-top: 1px solid ${borderColor}; margin: 3em 0; }
-        .exit-btn {
-          position: fixed; top: 20px; right: 20px; 
-          padding: 8px 16px; background: ${isDark ? '#222' : '#eee'}; 
-          color: ${textColor}; border: 1px solid ${borderColor}; 
-          cursor: pointer; font-family: sans-serif; font-size: 12px; font-weight: bold;
-          text-transform: uppercase; letter-spacing: 1px;
-        }
-        .exit-btn:hover { background: ${isDark ? '#333' : '#ddd'}; }
-      </style>
-    </head>
-    <body dir="${data.dir || 'ltr'}">
-      <div class="cltrx-container">
-        <button class="exit-btn" onclick="window.location.reload()">Exit Cluttarex</button>
-        <h1>${data.title}</h1>
-        <div class="article-body">${data.content}</div>
-        <hr />
-        <p style="opacity: 0.3; font-size: 0.7em; text-transform: uppercase; letter-spacing: 2px;">End of Cluttarex Clean Version</p>
-      </div>
-    </body>
-    </html>
+  // Create a clean overlay
+  const overlay = document.createElement('div');
+  overlay.id = 'cluttarex-overlay';
+  overlay.style.cssText = `
+    all: initial;
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: ${bgColor};
+    color: ${textColor};
+    z-index: 2147483647;
+    overflow-y: auto;
+    padding: 60px 20px;
+    font-family: ${fontFamily};
+    line-height: 1.6;
+    display: block;
   `;
+
+  overlay.innerHTML = `
+    <div style="all: revert; max-width: 750px; margin: 0 auto; display: block;">
+      <button onclick="document.getElementById('cluttarex-overlay').remove()" style="all: revert; position: fixed; top: 20px; right: 20px; padding: 10px 20px; background: ${isDark ? '#222' : '#eee'}; color: ${textColor}; border: 1px solid ${borderColor}; cursor: pointer; font-weight: bold; font-family: sans-serif;">EXIT</button>
+      <h1 style="all: revert; font-size: 2.5em; margin-bottom: 30px; font-weight: 800; display: block;">${data.title}</h1>
+      <div style="all: revert; font-size: ${fontSize}px; display: block;">${data.content}</div>
+      <div style="all: revert; border-top: 1px solid ${borderColor}; margin-top: 50px; padding-top: 20px; opacity: 0.3; font-size: 12px; display: block;">
+        CLEANED BY CLUTTAREX
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(overlay);
 }
 
-function cleanPage(fontType: string = 'sans', theme: string = 'light') {
+function cleanPage(fontType: string = 'sans', theme: string = 'light', fontSize: string = '20') {
   const title = document.querySelector('h1')?.innerText || document.title;
   
-  // Target Wikipedia and other common content areas
-  const contentSelectors = [
-    '.mw-parser-output', 
-    'article', 
-    'main', 
-    '[role="main"]',
-    '.content',
-    '.post-content'
-  ];
-  
-  let mainContent: Element | null = null;
-  for (const selector of contentSelectors) {
-    const el = document.querySelector(selector);
-    if (el) {
-      mainContent = el.cloneNode(true) as Element;
-      break;
-    }
-  }
+  // High-reliability content extraction
+  const article = document.querySelector('article') || document.querySelector('main') || document.querySelector('.content') || document.body;
+  const clone = article.cloneNode(true) as HTMLElement;
 
-  // Fallback to all paragraphs if no container found
-  let htmlContent = '';
-  if (mainContent) {
-    // Remove known clutter from the clone
-    const clutter = mainContent.querySelectorAll('script, style, .navbox, .infobox, .reference, .reflist, .sidebar, .ambox, .metadata');
-    clutter.forEach(el => el.remove());
-    htmlContent = mainContent.innerHTML;
-  } else {
-    htmlContent = Array.from(document.querySelectorAll('p'))
-      .map(p => p.outerHTML)
-      .filter(html => html.length > 20)
-      .join('');
-  }
+  // Remove junk from the clone
+  const junk = clone.querySelectorAll('script, style, iframe, nav, footer, header, aside, .ad, .social, .comments, .sidebar');
+  junk.forEach(el => el.remove());
 
-  replaceContent({ title, content: htmlContent }, fontType, theme);
+  replaceContent({ title, content: clone.innerHTML }, fontType, theme, fontSize);
 }
