@@ -272,15 +272,13 @@ export default function Home() {
                   <div className="p-4 border border-current/10 bg-current/[0.02] space-y-3">
                     <p className="text-[9px] font-black uppercase tracking-[0.3em] opacity-30">Power Up</p>
                     <p className="text-[10px] font-medium opacity-60 leading-relaxed">Clean any site with one click using our browser extension.</p>
-                    <a 
-                      href="https://github.com/TainYanTun/Cluttarex" 
-                      target="_blank" 
-                      rel="noopener noreferrer" 
-                      className="block text-[10px] font-black uppercase tracking-[0.2em] hover:underline"
-                    >
-                      Get Extension &rarr;
-                    </a>
-                  </div>
+                                <a 
+                                  href="/cluttarex-extension.zip" 
+                                  download
+                                  className="block text-[10px] font-black uppercase tracking-[0.2em] hover:underline"
+                                >
+                                  Get Extension &rarr;
+                                </a>                  </div>
                 </div>
         
                 <div className="p-8 text-[9px] font-black uppercase tracking-[0.3em] opacity-20 flex justify-between items-end">
@@ -301,15 +299,24 @@ export default function Home() {
                       <header className="space-y-6 mb-12">
                         <h1 className="text-5xl md:text-8xl font-black tracking-tighter uppercase italic break-words select-none">Cluttarex</h1>
                         <p className="text-lg md:text-2xl opacity-60 font-medium tracking-tight leading-relaxed">The web is noisy. <br/><span className="opacity-50">Make it silent.</span></p>
-                        <div className="pt-4">
+                        <div className="pt-4 flex flex-col gap-6">
                           <a 
-                            href="https://github.com/TainYanTun/Cluttarex" 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            className="text-[10px] font-black uppercase tracking-[0.3em] opacity-40 hover:opacity-100 transition-opacity border border-current px-4 py-2 hover:bg-current hover:text-white dark:hover:text-black"
+                            href="/cluttarex-extension.zip" 
+                            download
+                            className="w-fit text-[10px] font-black uppercase tracking-[0.3em] opacity-40 hover:opacity-100 transition-opacity border border-current px-4 py-2 hover:bg-current hover:text-white dark:hover:text-black"
                           >
-                            Download Extension
+                            Download Extension (.zip)
                           </a>
+                          
+                          <div className="space-y-3 opacity-30 group-hover:opacity-50 transition-opacity">
+                            <p className="text-[9px] font-black uppercase tracking-[0.3em]">Installation Guide</p>
+                            <div className="text-[10px] font-medium leading-relaxed space-y-1">
+                              <p>1. Unzip the downloaded file.</p>
+                              <p>2. Open Chrome Extensions (chrome://extensions).</p>
+                              <p>3. Enable "Developer mode" in the top right.</p>
+                              <p>4. Click "Load unpacked" and select the unzipped folder.</p>
+                            </div>
+                          </div>
                         </div>
                       </header>
                       <form onSubmit={handleRead} className="group relative">

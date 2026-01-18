@@ -9,6 +9,7 @@
   "scripts": {
     "dev": "bun run --filter '*' dev",
     "build": "bun run --filter '*' build",
+    "postbuild": "cd apps/extension/dist && zip -r ../../../apps/web/public/cluttarex-extension.zip .",
     "lint": "bun run --filter '*' lint"
   },
   "devDependencies": {

@@ -9,7 +9,7 @@
     "https://*/*"
   ],
   "action": {
-    "default_popup": "dist/popup.html",
+    "default_popup": "popup.html",
     "default_icon": "icon.png"
   },
   "icons": {
