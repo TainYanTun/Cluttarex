@@ -1,7 +1,15 @@
-# CLUTTAREX
-### THE WEB IS NOISY. MAKE IT SILENT.
+<p align="center">
+  <img src="apps/web/public/icon.png" width="250" height="240" alt="Lite Read preview">
+</p>
 
-**Cluttarex** is a high-performance, minimalist text-reader suite designed to strip the modern web down to its essential core. No ads. No tracking. No noise. Just the text you came for.
+<div align="center">
+
+# CLUTTAREX
+### *THE WEB IS NOISY. MAKE IT SILENT.*
+
+
+</div>
+
 
 ---
 
