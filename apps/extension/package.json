@@ -1,12 +1,12 @@
 {
-  "name": "lite-read-extension",
+  "name": "cluttarex-extension",
   "version": "1.0.0",
   "scripts": {
-    "build": "tsc && vite build && cp manifest.json dist/manifest.json",
+    "build": "tsc && vite build && mv dist/src/popup/popup.html dist/popup.html && sed -i '' 's|../../popup.js|./popup.js|g' dist/popup.html && rm -rf dist/src && cp manifest.json dist/manifest.json",
     "dev": "vite"
   },
   "dependencies": {
-    "@lite-read/shared": "*"
+    "@cluttarex/shared": "*"
   },
   "devDependencies": {
     "typescript": "^5.0.0",

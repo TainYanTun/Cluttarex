@@ -3,20 +3,22 @@
   "name": "Cluttarex",
   "version": "1.0.0",
   "description": "Distraction-free reading mode.",
-  "permissions": ["activeTab", "scripting"],
-  "host_permissions": ["http://localhost/*"],
+  "permissions": ["activeTab", "scripting", "storage", "tabs"],
+  "host_permissions": [
+    "http://*/*",
+    "https://*/*"
+  ],
   "action": {
-    "default_popup": "popup.html",
-    "default_icon": "icon.png"
+    "default_popup": "popup.html"
   },
   "background": {
-    "service_worker": "src/background/index.ts",
+    "service_worker": "background.js",
     "type": "module"
   },
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
-      "js": ["src/content/index.ts"]
+      "js": ["content.js"]
     }
   ]
 }

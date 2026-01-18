@@ -10,12 +10,13 @@ export default defineConfig({
         content: resolve(__dirname, 'src/content/index.ts'),
       },
       output: {
-        entryFileNames: 'src/[name]/index.js',
-        chunkFileNames: 'assets/[name].js',
-        assetFileNames: 'assets/[name].[ext]',
+        entryFileNames: '[name].js',
+        chunkFileNames: '[name].js',
+        assetFileNames: '[name].[ext]',
       },
     },
     outDir: 'dist',
     emptyOutDir: true,
   },
+  base: './', // CRITICAL: Use relative paths
 });

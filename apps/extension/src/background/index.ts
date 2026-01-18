@@ -1,1 +1,1 @@
-console.log('Lite-Read background service worker running');
+console.log('Cluttarex background service worker running');

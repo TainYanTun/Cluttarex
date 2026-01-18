@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { ArticleData } from '@lite-read/shared';
+import { ArticleData } from '@cluttarex/shared';
 
 interface Tab {
   id: string;
@@ -43,7 +43,7 @@ export default function Home() {
 
   // --- Effects ---
   
-  // Load Persistence
+  // Load persistence
   useEffect(() => {
     const savedTabs = localStorage.getItem('cltrx-tabs');
     const savedActiveId = localStorage.getItem('cltrx-active-id');
@@ -52,21 +52,20 @@ export default function Home() {
     if (savedTabs) {
       try {
         const parsed = JSON.parse(savedTabs);
-        if (parsed.length > 0) setTabs(parsed);
+        if (parsed && Array.isArray(parsed) && parsed.length > 0) setTabs(parsed);
       } catch (e) { console.error('Failed to parse saved tabs'); }
     }
     if (savedActiveId) setActiveTabId(savedActiveId);
     if (savedSidebar !== null) setSidebarOpen(savedSidebar === 'true');
   }, []);
 
-  // Save Persistence
+  // Save persistence
   useEffect(() => {
-    // Only save if there's actual data to avoid overwriting with defaults during mount
-    if (tabs.length > 0) {
-      localStorage.setItem('cltrx-tabs', JSON.stringify(tabs.map(t => ({ ...t, loading: false, error: null })))); // Don't save transient states
+    if (tabs && tabs.length > 0) {
+      localStorage.setItem('cltrx-tabs', JSON.stringify(tabs.map(t => ({ ...t, loading: false, error: null })))); 
     }
-    localStorage.setItem('cltrx-active-id', activeTabId);
-    localStorage.setItem('cltrx-sidebar', sidebarOpen.toString());
+    if (activeTabId) localStorage.setItem('cltrx-active-id', activeTabId);
+    if (sidebarOpen !== undefined) localStorage.setItem('cltrx-sidebar', sidebarOpen.toString());
   }, [tabs, activeTabId, sidebarOpen]);
 
   // Sync Theme with DOM
@@ -80,15 +79,15 @@ export default function Home() {
 
   // Load Settings
   useEffect(() => {
-    const savedFont = localStorage.getItem('lr-font') as any;
-    const savedTheme = localStorage.getItem('lr-theme') as any;
-    const savedSize = localStorage.getItem('lr-fontSize');
-    const savedVoice = localStorage.getItem('lr-voice');
-    const savedRate = localStorage.getItem('lr-rate');
-    const savedPitch = localStorage.getItem('lr-pitch');
+    const savedFont = localStorage.getItem('cltrx-font');
+    const savedTheme = localStorage.getItem('cltrx-theme');
+    const savedSize = localStorage.getItem('cltrx-fontSize');
+    const savedVoice = localStorage.getItem('cltrx-voice');
+    const savedRate = localStorage.getItem('cltrx-rate');
+    const savedPitch = localStorage.getItem('cltrx-pitch');
     
-    if (savedFont) setFont(savedFont);
-    if (savedTheme) setTheme(savedTheme);
+    if (savedFont) setFont(savedFont as any);
+    if (savedTheme) setTheme(savedTheme as any);
     if (savedSize) setFontSize(parseInt(savedSize, 10));
     if (savedVoice) setSelectedVoiceName(savedVoice);
     if (savedRate) setSpeechRate(parseFloat(savedRate));
