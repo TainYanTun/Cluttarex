@@ -299,13 +299,13 @@ export default function Home() {
                   <div className="p-4 border border-current/10 bg-current/[0.02] space-y-3">
                     <p className="text-[9px] font-black uppercase tracking-[0.3em] opacity-30">Power Up</p>
                     <p className="text-[10px] font-medium opacity-60 leading-relaxed">Clean any site with one click using our browser extension.</p>
-                                <a 
-                                  href="/cluttarex-extension.zip" 
-                                  download
-                                  className="block text-[10px] font-black uppercase tracking-[0.2em] hover:underline"
-                                >
-                                  Get Extension &rarr;
-                                </a>                  </div>
+                                            <a 
+                                              href="/cluttarex-extension.zip" 
+                                              download="cluttarex-extension.zip"
+                                              className="block text-[10px] font-black uppercase tracking-[0.2em] hover:underline"
+                                            >
+                                              Get Extension &rarr;
+                                            </a>                  </div>
                 </div>
         
                 <div className="p-8 text-[9px] font-black uppercase tracking-[0.3em] opacity-20 flex justify-between items-end">
@@ -329,7 +329,7 @@ export default function Home() {
                         <div className="pt-4 flex flex-col gap-6">
                           <a 
                             href="/cluttarex-extension.zip" 
-                            download
+                            download="cluttarex-extension.zip"
                             className="w-fit text-[10px] font-black uppercase tracking-[0.3em] opacity-40 hover:opacity-100 transition-opacity border border-current px-4 py-2 hover:bg-current hover:text-white dark:hover:text-black"
                           >
                             Download Extension (.zip)
