@@ -16,8 +16,12 @@ export default function Home() {
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
   const [selectedVoiceName, setSelectedVoiceName] = useState<string>('');
   const [isSpeaking, setIsPlaying] = useState(false);
-  const [speechRate, setSpeechRate] = useState<number>(0.9);
+  const [speechRate, setSpeechRate] = useState<number>(1.0);
   const [speechPitch, setSpeechPitch] = useState<number>(1.0);
+  
+  // UI States
+  const [showAudioSettings, setShowAudioSettings] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   // Load settings from localStorage on mount
   useEffect(() => {
@@ -38,7 +42,6 @@ export default function Home() {
     // Load voices
     const loadVoices = () => {
       const vs = window.speechSynthesis.getVoices();
-      // Prioritize "Natural" or "Google" voices in the list
       const filtered = vs.filter(v => v.lang.startsWith('en')).sort((a, b) => {
         const aScore = (a.name.includes('Natural') || a.name.includes('Google')) ? 1 : 0;
         const bScore = (b.name.includes('Natural') || b.name.includes('Google')) ? 1 : 0;
@@ -49,6 +52,13 @@ export default function Home() {
     
     loadVoices();
     window.speechSynthesis.onvoiceschanged = loadVoices;
+
+    // Fullscreen listener
+    const onFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+    document.addEventListener('fullscreenchange', onFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', onFullscreenChange);
   }, []);
 
   // Save settings when they change
@@ -63,6 +73,14 @@ export default function Home() {
 
   const toggleTheme = () => {
     setTheme(prev => prev === 'light' ? 'dark' : 'light');
+  };
+
+  const toggleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen();
+    } else {
+      document.exitFullscreen();
+    }
   };
 
   // Speech Logic
@@ -228,72 +246,122 @@ export default function Home() {
               </button>
               
               <div className="flex items-center gap-6">
+                 <button onClick={toggleFullscreen} className="text-[10px] font-black uppercase tracking-[0.3em] opacity-40 hover:opacity-100 transition-opacity">
+                   {isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}
+                 </button>
                  <button onClick={toggleTheme} className="text-[10px] font-black uppercase tracking-[0.3em] opacity-40 hover:opacity-100 transition-opacity">
                    {theme === 'light' ? 'Dark' : 'Light'}
                  </button>
               </div>
             </div>
 
-            {/* Hyper-Minimal Toolbar - Scrollable on mobile */}
-            <div className="sticky top-0 z-10 bg-inherit py-4 border-b border-current/10 font-sans flex items-center justify-between gap-4 select-none backdrop-blur-sm bg-opacity-95 overflow-x-auto no-scrollbar">
-               <div className="flex gap-4 text-[10px] font-black uppercase tracking-[0.2em] flex-shrink-0">
-                 {(['serif', 'sans', 'slab', 'mono'] as const).map((f) => (
-                   <button 
-                     key={f}
-                     onClick={() => setFont(f)} 
-                     className={`hover:opacity-100 transition-opacity ${font === f ? 'opacity-100 underline decoration-2 underline-offset-4' : 'opacity-30'}`}
-                   >
-                     {f}
-                   </button>
-                 ))}
-               </div>
-
-               <div className="flex items-center gap-4 text-xs font-black flex-shrink-0 pl-4">
-                 <div className="flex items-center gap-3 border-r border-current/20 pr-4 mr-2">
-                   <button onClick={handleListen} className={`tracking-[0.2em] uppercase ${isSpeaking ? 'text-red-500' : 'opacity-40 hover:opacity-100'}`}>
-                     {isSpeaking ? 'Stop' : 'Listen'}
-                   </button>
-                   
-                   {voices.length > 0 && (
-                     <div className="flex items-center gap-3 opacity-40 hover:opacity-100 transition-opacity">
-                       <select 
-                         value={selectedVoiceName}
-                         onChange={(e) => setSelectedVoiceName(e.target.value)}
-                         className="bg-transparent border-none text-[10px] uppercase font-bold tracking-tighter outline-none max-w-[60px] cursor-pointer"
+            {/* Hyper-Minimal Toolbar - Responsive & Collapsible */}
+            <div className="sticky top-0 z-10 bg-inherit border-b border-current/10 font-sans backdrop-blur-sm bg-opacity-95 transition-all">
+               <div className="flex flex-col">
+                 {/* Main Controls Row */}
+                 <div className="flex items-center justify-between py-4 overflow-x-auto no-scrollbar gap-4">
+                   {/* Left: Fonts */}
+                   <div className="flex gap-4 text-[10px] font-black uppercase tracking-[0.2em] flex-shrink-0">
+                     {(['serif', 'sans', 'slab', 'mono'] as const).map((f) => (
+                       <button 
+                         key={f}
+                         onClick={() => setFont(f)} 
+                         className={`hover:opacity-100 transition-opacity ${font === f ? 'opacity-100 underline decoration-2 underline-offset-4' : 'opacity-30'}`}
                        >
-                         <option value="">Voice</option>
-                         {voices.map(v => (
-                           <option key={v.name} value={v.name}>{v.name}</option>
-                         ))}
-                       </select>
-                       <div className="flex flex-col gap-1">
-                         <div className="flex items-center gap-1">
-                            <span className="text-[6px] uppercase tracking-wider">Spd</span>
+                         {f}
+                       </button>
+                     ))}
+                   </div>
+
+                   {/* Right: Actions */}
+                   <div className="flex items-center gap-6 text-xs font-black flex-shrink-0 pl-4">
+                      {/* Font Size */}
+                      <div className="flex gap-2 opacity-40 border-r border-current/20 pr-6">
+                        <button onClick={() => setFontSize(s => Math.max(14, s - 2))} className="hover:opacity-100 w-6 text-center">A-</button>
+                        <button onClick={() => setFontSize(s => Math.min(32, s + 2))} className="hover:opacity-100 w-6 text-center text-sm">A+</button>
+                      </div>
+
+                      {/* Listen Controls */}
+                      <div className="flex items-center gap-3">
+                        <button onClick={handleListen} className={`tracking-[0.2em] uppercase transition-colors ${isSpeaking ? 'text-red-500 animate-pulse' : 'opacity-40 hover:opacity-100'}`}>
+                          {isSpeaking ? 'Stop' : 'Listen'}
+                        </button>
+                        <button 
+                          onClick={() => setShowAudioSettings(!showAudioSettings)} 
+                          className={`w-8 h-8 flex items-center justify-center transition-all ${showAudioSettings ? 'bg-black text-white dark:bg-white dark:text-black opacity-100' : 'opacity-40 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/10'}`}
+                          title="Audio Settings"
+                        >
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <line x1="4" y1="21" x2="4" y2="14" />
+                            <line x1="4" y1="10" x2="4" y2="3" />
+                            <line x1="12" y1="21" x2="12" y2="12" />
+                            <line x1="12" y1="8" x2="12" y2="3" />
+                            <line x1="20" y1="21" x2="20" y2="16" />
+                            <line x1="20" y1="12" x2="20" y2="3" />
+                            <line x1="1" y1="14" x2="7" y2="14" />
+                            <line x1="9" y1="8" x2="15" y2="8" />
+                            <line x1="17" y1="16" x2="23" y2="16" />
+                          </svg>
+                        </button>
+                      </div>
+                   </div>
+                 </div>
+
+                 {/* Expanded Audio Settings */}
+                 {showAudioSettings && (
+                   <div className="border-t border-current/10 py-6 px-1 animate-in slide-in-from-top-2 duration-200">
+                     <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-[10px] font-black uppercase tracking-[0.2em]">
+                       {/* Voice Selection */}
+                       <div className="flex flex-col gap-3">
+                         <div className="flex justify-between opacity-40">
+                            <span>Voice Selection</span>
+                         </div>
+                         <select 
+                           value={selectedVoiceName}
+                           onChange={(e) => setSelectedVoiceName(e.target.value)}
+                           className="bg-transparent border-b border-current/20 py-2 outline-none font-black uppercase tracking-tighter cursor-pointer hover:border-current transition-colors h-8"
+                         >
+                           <option value="">System Default</option>
+                           {voices.map(v => (
+                             <option key={v.name} value={v.name}>{v.name.replace(/Google |Microsoft |Apple /g, '')}</option>
+                           ))}
+                         </select>
+                       </div>
+
+                       {/* Speed Control */}
+                       <div className="flex flex-col gap-3">
+                         <div className="flex justify-between opacity-40">
+                           <span>Playback Speed</span>
+                           <span className="font-mono">{speechRate.toFixed(1)}x</span>
+                         </div>
+                         <div className="h-8 flex items-center">
                             <input 
                               type="range" min="0.5" max="2" step="0.1" 
                               value={speechRate} 
                               onChange={(e) => setSpeechRate(parseFloat(e.target.value))}
-                              className="w-8 h-1 accent-current"
+                              className="w-full h-1 accent-current cursor-pointer opacity-50 hover:opacity-100 transition-opacity"
                             />
                          </div>
-                         <div className="flex items-center gap-1">
-                            <span className="text-[6px] uppercase tracking-wider">Pch</span>
+                       </div>
+
+                       {/* Pitch Control */}
+                       <div className="flex flex-col gap-3">
+                         <div className="flex justify-between opacity-40">
+                           <span>Voice Pitch</span>
+                           <span className="font-mono">{speechPitch.toFixed(1)}x</span>
+                         </div>
+                         <div className="h-8 flex items-center">
                             <input 
                               type="range" min="0.5" max="2" step="0.1" 
                               value={speechPitch} 
                               onChange={(e) => setSpeechPitch(parseFloat(e.target.value))}
-                              className="w-8 h-1 accent-current"
+                              className="w-full h-1 accent-current cursor-pointer opacity-50 hover:opacity-100 transition-opacity"
                             />
                          </div>
                        </div>
                      </div>
-                   )}
-                 </div>
-
-                 <div className="flex gap-2 opacity-40">
-                   <button onClick={() => setFontSize(s => Math.max(14, s - 2))} className="hover:opacity-100 w-6 text-center">A-</button>
-                   <button onClick={() => setFontSize(s => Math.min(32, s + 2))} className="hover:opacity-100 w-6 text-center text-sm">A+</button>
-                 </div>
+                   </div>
+                 )}
                </div>
             </div>
 
