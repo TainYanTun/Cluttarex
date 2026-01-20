@@ -1,6 +1,7 @@
 {
   "name": "cluttarex-extension",
   "version": "1.0.0",
+  "license": "MIT",
   "scripts": {
     "build": "tsc && vite build && mv dist/src/popup/popup.html dist/popup.html && sed -i '' 's|../../popup.js|./popup.js|g' dist/popup.html && rm -rf dist/src && cp manifest.json dist/manifest.json",
     "dev": "vite"
